@@ -6,7 +6,6 @@ import {
   integer,
   numeric,
   boolean,
-  date,
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
@@ -26,13 +25,36 @@ export const exercises = pgTable("exercises", {
 });
 
 // ---------------------------------------------------------------------------
-// Workout
+// Training blocks & weeks
+// ---------------------------------------------------------------------------
+
+export const trainingBlocks = pgTable("training_blocks", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const trainingWeeks = pgTable("training_weeks", {
+  id: serial("id").primaryKey(),
+  blockId: integer("block_id")
+    .notNull()
+    .references(() => trainingBlocks.id, { onDelete: "cascade" }),
+  weekNumber: integer("week_number").notNull(),
+  notes: text("notes"),
+});
+
+// ---------------------------------------------------------------------------
+// Workout (container for a session — either part of a week or standalone)
 // ---------------------------------------------------------------------------
 
 export const workouts = pgTable("workouts", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
-  date: date("date").notNull(),
+  weekId: integer("week_id")
+    .references(() => trainingWeeks.id, { onDelete: "set null" }),
+  name: text("name"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -110,11 +132,12 @@ export const sets = pgTable("sets", {
   rir: integer("rir"),
   tempo: text("tempo"),
   isWarmup: boolean("is_warmup").default(false).notNull(),
+  durationMinutes: integer("duration_minutes"),
   notes: text("notes"),
 });
 
 // ---------------------------------------------------------------------------
-// User exercise stats (reference 1RM per user per exercise)
+// User exercise stats (auto-calculated 1RM per user per exercise)
 // ---------------------------------------------------------------------------
 
 export const userExerciseStats = pgTable("user_exercise_stats", {
@@ -136,7 +159,23 @@ export const exercisesRelations = relations(exercises, ({ many }) => ({
   userStats: many(userExerciseStats),
 }));
 
+export const trainingBlocksRelations = relations(trainingBlocks, ({ many }) => ({
+  weeks: many(trainingWeeks),
+}));
+
+export const trainingWeeksRelations = relations(trainingWeeks, ({ one, many }) => ({
+  block: one(trainingBlocks, {
+    fields: [trainingWeeks.blockId],
+    references: [trainingBlocks.id],
+  }),
+  workouts: many(workouts),
+}));
+
 export const workoutsRelations = relations(workouts, ({ one, many }) => ({
+  week: one(trainingWeeks, {
+    fields: [workouts.weekId],
+    references: [trainingWeeks.id],
+  }),
   mobilitySession: one(mobilitySessions, {
     fields: [workouts.id],
     references: [mobilitySessions.workoutId],
