@@ -5,12 +5,15 @@ import { db } from '@/db'
 import { trainingBlocks } from '@/db/schema'
 import Link from 'next/link'
 import { SLBadge, SLButton, SLCard, SLPageHeader, SLSection } from '@/components/ui-sl'
+import { getOrCreateUserLevel } from '@/lib/userLevel'
+import { NicknameOnboardingModal } from './NicknameOnboardingModal'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const [blocks, standaloneWorkouts] = await Promise.all([
+  const [level, blocks, standaloneWorkouts] = await Promise.all([
+    getOrCreateUserLevel(userId),
     db.query.trainingBlocks.findMany({
       where: eq(trainingBlocks.userId, userId),
       with: { weeks: true },
@@ -24,6 +27,8 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {!level.nickname && <NicknameOnboardingModal />}
+
       <div>
         <SLPageHeader title="Dashboard" />
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

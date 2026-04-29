@@ -16,6 +16,7 @@ import {
   sets,
   exercises,
   userExerciseStats,
+  userLevels,
 } from '@/db/schema'
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,29 @@ async function requireUser() {
 function calculate1rm(weightKg: number, reps: number, rir: number): number {
   const totalReps = reps + rir
   return weightKg * (1 + totalReps / 30)
+}
+
+export async function updateNickname(formData: FormData) {
+  const userId = await requireUser()
+  const nickname = formData.get('nickname')
+  if (typeof nickname !== 'string') return
+
+  const cleanNickname = nickname.trim()
+  if (cleanNickname.length < 2) return
+
+  const existing = await db.query.userLevels.findFirst({
+    where: eq(userLevels.userId, userId),
+  })
+
+  if (existing) {
+    await db.update(userLevels)
+      .set({ nickname: cleanNickname, updatedAt: new Date() })
+      .where(eq(userLevels.userId, userId))
+  } else {
+    await db.insert(userLevels).values({ userId, nickname: cleanNickname })
+  }
+
+  revalidatePath('/dashboard', 'layout')
 }
 
 async function upsert1rm(userId: string, exerciseId: number, weight: number, reps: number, rir: number) {

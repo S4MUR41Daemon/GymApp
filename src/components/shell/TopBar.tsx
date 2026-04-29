@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { getOrCreateUserLevel } from "@/lib/userLevel";
+import { getDisplayName, getOrCreateUserLevel } from "@/lib/userLevel";
 import { XPBar } from "./XPBar";
 import { TopBarLevelButton } from "./TopBarLevelButton";
 import type { Rank } from "./ranks";
@@ -11,6 +11,7 @@ export async function TopBar() {
   if (!userId) return null;
 
   const level = await getOrCreateUserLevel(userId);
+  const displayName = getDisplayName(level, "Leveler");
 
   return (
     <header
@@ -44,17 +45,36 @@ export async function TopBar() {
           >
             A
           </div>
-          <span
-            style={{
-              fontFamily: "var(--font-rajdhani), sans-serif",
-              fontWeight: 700,
-              fontSize: 15,
-              letterSpacing: "0.06em",
-              color: "#e2e8f0",
-            }}
-          >
-            AUSINLIFTING
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+            <span
+              style={{
+                fontFamily: "var(--font-rajdhani), sans-serif",
+                fontWeight: 700,
+                fontSize: 15,
+                letterSpacing: "0.06em",
+                color: "#e2e8f0",
+              }}
+            >
+              AUSINLIFTING
+            </span>
+            <span
+              style={{
+                marginTop: 3,
+                fontFamily: "var(--font-barlow), sans-serif",
+                fontWeight: 600,
+                fontSize: 9,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "rgba(148,163,184,0.55)",
+                maxWidth: 130,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {displayName}
+            </span>
+          </div>
         </div>
 
         <div style={{ flex: 1 }} />

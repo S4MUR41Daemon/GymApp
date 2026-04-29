@@ -5,14 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type EnabledTab = {
-  id: "dashboard" | "training";
+  id: "dashboard" | "status" | "training";
   label: string;
   icon: string;
   href: string;
 };
 
 type DisabledTab = {
-  id: "status" | "quests" | "guild";
+  id: "quests" | "guild";
   label: string;
   icon: string;
   disabled: true;
@@ -22,7 +22,7 @@ type Tab = EnabledTab | DisabledTab;
 
 const TABS: Tab[] = [
   { id: "dashboard", label: "Base", icon: "⚡", href: "/dashboard" },
-  { id: "status", label: "Status", icon: "🛡️", disabled: true },
+  { id: "status", label: "Status", icon: "🛡️", href: "/dashboard/status" },
   { id: "training", label: "Training", icon: "⚔️", href: "/dashboard/blocks" },
   { id: "quests", label: "Quests", icon: "📜", disabled: true },
   { id: "guild", label: "Guild", icon: "🏴", disabled: true },
