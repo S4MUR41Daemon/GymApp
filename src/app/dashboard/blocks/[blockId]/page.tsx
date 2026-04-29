@@ -2,10 +2,10 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect, notFound } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/db'
-import { trainingBlocks, trainingWeeks, workouts } from '@/db/schema'
-import Link from 'next/link'
+import { trainingBlocks } from '@/db/schema'
 import { addWeek, deleteBlock, deleteWeek } from '../../actions'
 import WeekAccordion from './WeekAccordion'
+import { SLButton, SLPageHeader } from '@/components/ui-sl'
 
 type Params = Promise<{ blockId: string }>
 
@@ -63,43 +63,25 @@ export default async function BlockPage({ params }: { params: Params }) {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 max-w-[640px] p-7">
-      <Link href="/dashboard" className="text-[12px] text-zinc-400 hover:text-zinc-100 transition-colors">
-        ← Dashboard
-      </Link>
-
-      <div>
-        <h1 className="text-[22px] font-semibold tracking-tight text-zinc-100">{block.name}</h1>
-        {block.notes && <p className="text-zinc-400 text-[13px] mt-1">{block.notes}</p>}
-      </div>
-
-      <div className="flex items-center gap-4">
-        <Link
-          href="/dashboard"
-          className="rounded-[0.625rem] bg-zinc-100 px-[14px] py-[7px] text-[13px] font-medium text-zinc-900 hover:opacity-85 transition-opacity"
-        >
-          Guardar bloque
-        </Link>
-        <form action={deleteBlockAction}>
-          <button type="submit" className="text-[12px] text-zinc-500 hover:text-red-400 transition-colors">
-            Eliminar bloque
-          </button>
-        </form>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <SLPageHeader
+        backHref="/dashboard"
+        backLabel="< DASHBOARD"
+        title={block.name}
+        subtitle={block.notes}
+        right={<SLButton variant="primary" size="sm" href="/dashboard">Guardar</SLButton>}
+      />
 
       <form action={addWeekAction}>
-        <button
-          type="submit"
-          className="rounded-[0.625rem] border border-white/[0.18] px-[14px] py-[7px] text-[13px] font-medium text-zinc-100 hover:bg-zinc-800 hover:border-white/[0.28] transition-all duration-150 mb-2"
-        >
+        <SLButton type="submit" variant="secondary" size="sm">
           + Añadir semana
-        </button>
+        </SLButton>
       </form>
 
       {block.weeks.length === 0 ? (
-        <p className="text-zinc-500 text-[13px]">No hay semanas aún. Añade la primera.</p>
+        <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.45)' }}>No hay semanas aún. Añade la primera.</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: 0, padding: 0, listStyle: 'none' }}>
           {block.weeks.map((week) => (
             <li key={week.id}>
               <WeekAccordion
@@ -112,6 +94,12 @@ export default async function BlockPage({ params }: { params: Params }) {
           ))}
         </ul>
       )}
-    </main>
+
+      <form action={deleteBlockAction}>
+        <SLButton type="submit" variant="destructive" size="sm">
+          Eliminar bloque
+        </SLButton>
+      </form>
+    </div>
   )
 }

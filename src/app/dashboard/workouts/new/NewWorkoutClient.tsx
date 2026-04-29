@@ -2,16 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createWorkoutReturn, createMobilitySession, createBasicsSession, createCardioSession } from '../../actions'
+import { SLBadge, SLButton, SLCard, SLInput, SLProgressBar, SLTextarea } from '@/components/ui-sl'
 
 type Section = 'mobility' | 'basics' | 'main' | 'cardio'
 
-const SECTIONS: { key: Section; label: string; desc: string }[] = [
-  { key: 'mobility', label: 'Movilidad', desc: 'Estiramientos y activación' },
-  { key: 'basics', label: 'Básicos', desc: 'Ejercicios de fuerza general' },
-  { key: 'main', label: 'Entrenamiento', desc: 'Bloque principal de fuerza' },
-  { key: 'cardio', label: 'Cardio', desc: 'Trabajo cardiovascular' },
+const SECTIONS: { key: Section; label: string; desc: string; icon: string }[] = [
+  { key: 'mobility', label: 'Movilidad', desc: 'Estiramientos y activación', icon: '🧘' },
+  { key: 'basics', label: 'Básicos', desc: 'Ejercicios de fuerza general', icon: '🏋️' },
+  { key: 'main', label: 'Entrenamiento', desc: 'Bloque principal de fuerza', icon: '⚔️' },
+  { key: 'cardio', label: 'Cardio', desc: 'Trabajo cardiovascular', icon: '🏃' },
 ]
 
 export default function NewWorkoutClient() {
@@ -46,63 +46,34 @@ export default function NewWorkoutClient() {
   const progressPct = step === 1 ? 50 : 100
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Progress bar */}
-      <div className="h-[2px] bg-zinc-800 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-zinc-100 transition-all duration-300 rounded-full"
-          style={{ width: `${progressPct}%` }}
-        />
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <SLProgressBar value={progressPct} max={100} />
 
       {step === 1 ? (
         <>
-          <p className="text-[13px] text-zinc-400">
+          <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.6)' }}>
             Crea un entreno suelto. Podrás añadir secciones en el siguiente paso.
           </p>
-          <form onSubmit={handleStep1} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-zinc-300" htmlFor="name">Nombre (opcional)</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Ej. Sesión cardio extra"
-                className="rounded-[0.625rem] border border-white/[0.18] bg-white/[0.04] px-3 py-2 text-[13px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-white/30"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-zinc-300" htmlFor="notes">Notas (opcional)</label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={3}
-                placeholder="Notas del entreno..."
-                className="rounded-[0.625rem] border border-white/[0.18] bg-white/[0.04] px-3 py-2 text-[13px] text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-white/30 resize-none"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="rounded-[0.625rem] bg-zinc-100 px-[14px] py-[7px] text-[13px] font-medium text-zinc-900 hover:opacity-85 transition-opacity disabled:opacity-50"
-              >
+          <form onSubmit={handleStep1} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <SLInput id="name" name="name" type="text" label="Nombre (opcional)" placeholder="Ej. Sesión cardio extra" />
+            <SLTextarea id="notes" name="notes" rows={3} label="Notas (opcional)" placeholder="Notas del entreno..." />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <SLButton type="submit" disabled={isPending} variant="primary">
                 Crear entreno
-              </button>
-              <Link
-                href="/dashboard"
-                className="rounded-[0.625rem] border border-white/[0.18] px-[14px] py-[7px] text-[13px] font-medium text-zinc-100 hover:bg-zinc-800 transition-colors"
-              >
+              </SLButton>
+              <SLButton href="/dashboard" variant="ghost">
                 Cancelar
-              </Link>
+              </SLButton>
             </div>
           </form>
         </>
       ) : (
         <>
-          <p className="text-[13px] text-zinc-400">Añade secciones al entreno:</p>
-          <ul className="flex flex-col gap-2">
-            {SECTIONS.map(({ key, label, desc }) => {
+          <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.6)' }}>
+            Añade secciones al entreno{workoutName ? ` "${workoutName}"` : ''}:
+          </p>
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: 0, padding: 0, listStyle: 'none' }}>
+            {SECTIONS.map(({ key, label, desc, icon }) => {
               const isAdded = added.has(key)
               return (
                 <li key={key}>
@@ -110,31 +81,33 @@ export default function NewWorkoutClient() {
                     type="button"
                     onClick={() => handleAddSection(key)}
                     disabled={isAdded || isPending}
-                    className={`w-full flex items-center justify-between rounded-[0.625rem] border px-4 py-3 text-left transition-all duration-150 ${
-                      isAdded
-                        ? 'border-white/[0.22] bg-zinc-800'
-                        : 'border-white/10 hover:border-white/[0.22] hover:bg-zinc-800/50'
-                    }`}
+                    style={{ width: '100%', padding: 0, background: 'transparent', border: 0, textAlign: 'left', cursor: isAdded ? 'default' : 'pointer', opacity: isPending && !isAdded ? 0.6 : 1 }}
                   >
-                    <div>
-                      <p className="text-[13px] font-medium text-zinc-100">{label}</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">{desc}</p>
-                    </div>
-                    <span className={`text-[12px] font-medium shrink-0 ml-4 ${isAdded ? 'text-zinc-100' : 'text-zinc-400'}`}>
-                      {isAdded ? '✓ Añadido' : '+ Añadir'}
-                    </span>
+                    <SLCard style={isAdded ? { border: '1.5px solid rgba(96,165,250,0.5)', boxShadow: '0 0 16px rgba(59,130,246,0.25)' } : undefined}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{ fontSize: 24 }}>{icon}</span>
+                          <div>
+                            <p style={{ margin: 0, fontFamily: 'var(--font-rajdhani), sans-serif', fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>{label}</p>
+                            <p style={{ margin: '3px 0 0', fontSize: 11, color: 'rgba(148,163,184,0.6)' }}>{desc}</p>
+                          </div>
+                        </div>
+                        {isAdded ? <SLBadge variant="success">✓ Añadido</SLBadge> : <SLBadge variant="accent">+ Añadir</SLBadge>}
+                      </div>
+                    </SLCard>
                   </button>
                 </li>
               )
             })}
           </ul>
-          <button
+          <SLButton
             type="button"
             onClick={() => router.push(`/dashboard/workouts/${workoutId}`)}
-            className="rounded-[0.625rem] bg-zinc-100 px-[14px] py-[7px] text-[13px] font-medium text-zinc-900 hover:opacity-85 transition-opacity self-start"
+            variant="primary"
+            style={{ alignSelf: 'flex-start' }}
           >
             Ir al entreno →
-          </button>
+          </SLButton>
         </>
       )}
     </div>

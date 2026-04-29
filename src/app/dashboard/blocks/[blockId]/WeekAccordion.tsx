@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { SLButton, SLCard } from '@/components/ui-sl'
 
 type Workout = {
   id: number
@@ -34,22 +35,21 @@ export default function WeekAccordion({ week, workouts, blockId, deleteWeekActio
   const hasCardio = workouts.some((w) => !!w.cardioSession)
 
   return (
-    <div className="rounded-[0.625rem] border border-white/10 overflow-hidden">
+    <SLCard style={{ padding: 0, overflow: 'hidden' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-[14px] py-[10px]">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px' }}>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-3 flex-1 text-left"
+          style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textAlign: 'left', background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}
         >
           <span
-            className="text-zinc-400 text-[10px] transition-transform duration-200"
-            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}
+            style={{ transform: open ? 'rotate(90deg)' : 'rotate(0deg)', color: 'rgba(148,163,184,0.55)', fontSize: 10, transition: 'transform 200ms ease' }}
           >
             ▶
           </span>
-          <span className="text-[13px] font-medium text-zinc-100">Semana {week.weekNumber}</span>
-          <div className="flex gap-1.5 ml-1">
+          <span style={{ fontFamily: 'var(--font-rajdhani), sans-serif', fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>Semana {week.weekNumber}</span>
+          <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
             <SectionDot label="M" active={hasMobility} title="Movilidad" />
             <SectionDot label="B" active={hasBasics} title="Básicos" />
             <SectionDot label="E" active={hasMain} title="Entrenamiento" />
@@ -57,39 +57,45 @@ export default function WeekAccordion({ week, workouts, blockId, deleteWeekActio
           </div>
         </button>
 
-        <Link
-          href={`/dashboard/blocks/${blockId}/weeks/${week.id}`}
-          className="rounded-[0.625rem] border border-white/[0.18] px-[10px] py-1 text-[12px] font-medium text-zinc-100 hover:bg-zinc-800 hover:border-white/[0.28] transition-all duration-150 whitespace-nowrap"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <SLButton variant="secondary" size="sm" href={`/dashboard/blocks/${blockId}/weeks/${week.id}`}>
           + Entreno
-        </Link>
+        </SLButton>
 
         <form action={deleteWeekAction.bind(null, week.id)}>
-          <button type="submit" className="text-[12px] text-zinc-600 hover:text-red-400 transition-colors">
+          <SLButton type="submit" variant="destructive" size="sm">
             Eliminar
-          </button>
+          </SLButton>
         </form>
       </div>
 
       {/* Body */}
       <div
-        className="overflow-hidden transition-all duration-200"
-        style={{ maxHeight: open ? '2000px' : '0', opacity: open ? 1 : 0 }}
+        style={{ maxHeight: open ? '2000px' : '0', opacity: open ? 1 : 0, overflow: 'hidden', transition: 'all 200ms ease' }}
       >
-        <div className="border-t border-white/10 py-2">
+        <div style={{ borderTop: '1px solid rgba(59,130,246,0.1)', padding: '8px 10px 10px' }}>
           {workouts.length === 0 ? (
-            <p className="text-zinc-500 text-[12px] px-9 py-2">Sin entrenos aún.</p>
+            <p style={{ margin: 0, padding: '8px 26px', fontSize: 12, color: 'rgba(148,163,184,0.45)' }}>Sin entrenos aún.</p>
           ) : (
-            <ul>
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: 0, padding: 0, listStyle: 'none' }}>
               {workouts.map((w) => (
                 <li key={w.id}>
                   <Link
                     href={`/dashboard/workouts/${w.id}`}
-                    className="block w-full text-left px-9 py-[9px] text-[12px] text-zinc-200 hover:bg-zinc-800 transition-colors"
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      border: '1px solid rgba(59,130,246,0.1)',
+                      borderRadius: 6,
+                      padding: '8px 10px',
+                      textDecoration: 'none',
+                      fontFamily: 'var(--font-rajdhani), sans-serif',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#e2e8f0',
+                    }}
                   >
                     {w.name ?? `Entreno #${w.id}`}
-                    <span className="ml-3 text-zinc-500">
+                    <span style={{ marginLeft: 10, color: 'rgba(148,163,184,0.45)' }}>
                       {new Date(w.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </span>
                   </Link>
@@ -99,7 +105,7 @@ export default function WeekAccordion({ week, workouts, blockId, deleteWeekActio
           )}
         </div>
       </div>
-    </div>
+    </SLCard>
   )
 }
 
@@ -107,9 +113,20 @@ function SectionDot({ label, active, title }: { label: string; active: boolean; 
   return (
     <span
       title={title}
-      className={`w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] font-semibold ${
-        active ? 'bg-zinc-100 text-zinc-900' : 'bg-zinc-800 text-zinc-500'
-      }`}
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'var(--font-barlow), sans-serif',
+        fontSize: 10,
+        fontWeight: 700,
+        background: active ? 'linear-gradient(135deg,#1d4ed8,#3b82f6)' : 'rgba(148,163,184,0.1)',
+        color: active ? '#bfdbfe' : 'rgba(148,163,184,0.4)',
+        boxShadow: active ? '0 0 6px rgba(96,165,250,0.6)' : undefined,
+      }}
     >
       {label}
     </span>

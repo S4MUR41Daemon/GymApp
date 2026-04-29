@@ -18,3 +18,7 @@ export async function getOrCreateUserLevel(userId: string) {
 
   return created;
 }
+
+export function getDisplayName(level: { nickname: string | null }, fallback: string) {
+  return level.nickname?.trim() || fallback;
+}

@@ -72,7 +72,11 @@ export default async function RootLayout({
             }}
           >
             {userId && <TopBar />}
-            <main style={{ flex: 1, overflowY: "auto" }}>{children}</main>
+            <main style={{ flex: 1, width: "100%", overflowY: "auto" }}>
+              <div style={{ margin: "0 auto", width: "100%", maxWidth: 480, padding: "16px 16px 24px" }}>
+                {children}
+              </div>
+            </main>
             {userId && <BottomNav />}
           </div>
         </ClerkProvider>

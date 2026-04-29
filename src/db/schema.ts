@@ -158,6 +158,7 @@ export const userExerciseStats = pgTable("user_exercise_stats", {
 export const userLevels = pgTable("user_levels", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().unique(),
+  nickname: text("nickname"),
   xp: integer("xp").default(0).notNull(),
   level: integer("level").default(1).notNull(),
   rank: rankEnum("rank").default("E").notNull(),

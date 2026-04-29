@@ -1,5 +1,7 @@
 'use client'
 
+import { SLButton } from '@/components/ui-sl'
+
 export function DeleteWorkoutForm({
   action,
   workoutId,
@@ -10,9 +12,9 @@ export function DeleteWorkoutForm({
   return (
     <form action={action} onClick={(e) => e.stopPropagation()}>
       <input type="hidden" name="workoutId" value={workoutId} />
-      <button type="submit" className="text-xs text-zinc-600 hover:text-red-400 transition-colors">
+      <SLButton type="submit" variant="destructive" size="sm">
         Eliminar
-      </button>
+      </SLButton>
     </form>
   )
 }

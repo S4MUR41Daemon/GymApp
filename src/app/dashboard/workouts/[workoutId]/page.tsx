@@ -3,9 +3,9 @@ import { redirect, notFound } from 'next/navigation'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/db'
 import { workouts, trainingWeeks } from '@/db/schema'
-import Link from 'next/link'
 import WorkoutSections from '@/app/dashboard/WorkoutSections'
 import { deleteWorkout } from '../../actions'
+import { SLButton, SLPageHeader } from '@/components/ui-sl'
 
 type Params = Promise<{ workoutId: string }>
 
@@ -40,26 +40,22 @@ export default async function WorkoutPage({ params }: { params: Params }) {
   }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 max-w-[640px] p-7">
-      <Link href="/dashboard" className="text-[12px] text-zinc-400 hover:text-zinc-100 transition-colors">
-        ← Dashboard
-      </Link>
-
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-zinc-100">
-            {workout.name ?? 'Entreno'}
-          </h1>
-          {workout.notes && <p className="text-[13px] text-zinc-400 mt-1">{workout.notes}</p>}
-        </div>
-        <form action={deleteAction}>
-          <button type="submit" className="text-[12px] text-zinc-500 hover:text-red-400 transition-colors shrink-0">
-            Eliminar
-          </button>
-        </form>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <SLPageHeader
+        backHref="/dashboard"
+        backLabel="< DASHBOARD"
+        title={workout.name ?? 'Entreno'}
+        subtitle={workout.notes}
+        right={
+          <form action={deleteAction}>
+            <SLButton type="submit" variant="destructive" size="sm">
+              Eliminar
+            </SLButton>
+          </form>
+        }
+      />
 
       <WorkoutSections workout={workout} />
-    </main>
+    </div>
   )
 }

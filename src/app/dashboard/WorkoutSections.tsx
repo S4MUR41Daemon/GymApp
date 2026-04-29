@@ -13,6 +13,7 @@ import {
   saveAllSets,
   searchExercises,
 } from './actions'
+import { SLButton, SLCard, SLDivider, SLInput, SLNumberInput } from '@/components/ui-sl'
 
 type Set = {
   id: number
@@ -89,7 +90,7 @@ export default function WorkoutSections({ workout, redirectTo }: { workout: Work
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <form id={SETS_FORM_ID}>
         {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       </form>
@@ -97,9 +98,9 @@ export default function WorkoutSections({ workout, redirectTo }: { workout: Work
       <Section title="Movilidad">
         {!workout.mobilitySession ? (
           <form action={createMobility}>
-            <button type="submit" className="text-[12px] text-zinc-400 hover:text-zinc-100 transition-colors">
+            <SLButton type="submit" variant="ghost" size="sm">
               + Añadir movilidad
-            </button>
+            </SLButton>
           </form>
         ) : (
           <>
@@ -112,9 +113,9 @@ export default function WorkoutSections({ workout, redirectTo }: { workout: Work
       <Section title="Básicos">
         {!workout.basicsSession ? (
           <form action={createBasics}>
-            <button type="submit" className="text-[12px] text-zinc-400 hover:text-zinc-100 transition-colors">
+            <SLButton type="submit" variant="ghost" size="sm">
               + Añadir básicos
-            </button>
+            </SLButton>
           </form>
         ) : (
           <>
@@ -132,9 +133,9 @@ export default function WorkoutSections({ workout, redirectTo }: { workout: Work
       <Section title="Cardio">
         {!workout.cardioSession ? (
           <form action={createCardio}>
-            <button type="submit" className="text-[12px] text-zinc-400 hover:text-zinc-100 transition-colors">
+            <SLButton type="submit" variant="ghost" size="sm">
               + Añadir cardio
-            </button>
+            </SLButton>
           </form>
         ) : (
           <>
@@ -144,20 +145,21 @@ export default function WorkoutSections({ workout, redirectTo }: { workout: Work
         )}
       </Section>
 
-      <div className="flex items-center gap-4 mt-1">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
         {saved ? (
-          <div className="flex items-center gap-2">
-            <span className="text-[13px] font-medium text-zinc-100">✓ Guardado</span>
-            <span className="text-[13px] text-zinc-400">Los cambios se han guardado.</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#22c55e', fontSize: 13 }}>✓</span>
+            <span style={{ fontFamily: 'var(--font-rajdhani), sans-serif', fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>Guardado</span>
+            <span style={{ fontSize: 13, color: 'rgba(148,163,184,0.6)' }}>Los cambios se han guardado.</span>
           </div>
         ) : (
-          <button
+          <SLButton
             onClick={handleSave}
             disabled={isPending}
-            className="rounded-[0.625rem] bg-zinc-100 px-[14px] py-[7px] text-[13px] font-medium text-zinc-900 hover:opacity-85 transition-opacity disabled:opacity-50"
+            variant="primary"
           >
-            Guardar entreno
-          </button>
+            GUARDAR ENTRENO
+          </SLButton>
         )}
       </div>
     </div>
@@ -167,50 +169,66 @@ export default function WorkoutSections({ workout, redirectTo }: { workout: Work
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true)
   return (
-    <div className="rounded-[0.625rem] border border-white/10 overflow-hidden">
+    <SLCard style={{ padding: 0, overflow: 'hidden' }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-[14px] py-[10px] text-left"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          textAlign: 'left',
+          background: 'transparent',
+          border: 0,
+          cursor: 'pointer',
+        }}
       >
-        <span className="text-[13px] font-semibold text-zinc-100">{title}</span>
+        <div style={{ flex: 1 }}>
+          <SLDivider title={title} />
+        </div>
         <span
-          className="text-zinc-400 text-xs transition-transform duration-200"
-          style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+          style={{
+            marginLeft: 10,
+            transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
+            color: 'rgba(148,163,184,0.55)',
+            fontSize: 12,
+            transition: 'transform 200ms ease',
+          }}
         >
           ▼
         </span>
       </button>
       <div
-        className="overflow-hidden transition-all duration-200"
-        style={{ maxHeight: open ? '2000px' : '0', opacity: open ? 1 : 0 }}
+        style={{ maxHeight: open ? '2000px' : '0', opacity: open ? 1 : 0, overflow: 'hidden', transition: 'all 200ms ease' }}
       >
-        <div className="border-t border-white/10 px-[14px] py-3 flex flex-col gap-4">
+        <div style={{ borderTop: '1px solid rgba(59,130,246,0.1)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {children}
         </div>
       </div>
-    </div>
+    </SLCard>
   )
 }
 
 function ExerciseList({ formId, exercises, isMobility = false, isCardio = false }: { formId: string; exercises: SessionExercise[]; isMobility?: boolean; isCardio?: boolean }) {
   if (!exercises.length) return null
   return (
-    <ul className="flex flex-col gap-4">
+    <ul style={{ display: 'flex', flexDirection: 'column', gap: 16, margin: 0, padding: 0, listStyle: 'none' }}>
       {exercises.map((se) => (
-        <li key={se.id} className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-[13px] text-zinc-100">{se.exercise.name}</span>
+        <li key={se.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <span style={{ fontFamily: 'var(--font-rajdhani), sans-serif', fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>{se.exercise.name}</span>
             <form action={removeExercise.bind(null, se.id)}>
-              <button type="submit" className="text-[12px] text-zinc-500 hover:text-red-400 transition-colors">
+              <SLButton type="submit" variant="destructive" size="sm">
                 Quitar
-              </button>
+              </SLButton>
             </form>
           </div>
           {se.sets.sort((a, b) => a.setNumber - b.setNumber).map((s) => (
             <SetRow key={s.id} set={s} formId={formId} isMobility={isMobility} isCardio={isCardio} />
           ))}
-          {se.notes && <p className="text-xs text-zinc-500">{se.notes}</p>}
+          {se.notes && <p style={{ margin: 0, fontSize: 12, color: 'rgba(148,163,184,0.45)' }}>{se.notes}</p>}
         </li>
       ))}
     </ul>
@@ -219,85 +237,88 @@ function ExerciseList({ formId, exercises, isMobility = false, isCardio = false 
 
 function SetRow({ set, formId, isMobility, isCardio }: { set: Set; formId: string; isMobility?: boolean; isCardio?: boolean }) {
   const p = `set_${set.id}_`
-  const inputCls = "bg-white/[0.08] border border-white/[0.12] rounded-[5px] py-[5px] px-2 text-[12px] text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-white/30"
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       <input type="hidden" name="setId" value={set.id} form={formId} />
       {!isCardio && (
-        <span className={`text-[11px] w-10 ${set.isWarmup ? 'text-zinc-500' : 'text-zinc-400'}`}>
+        <span style={{ width: 42, fontFamily: 'var(--font-barlow), sans-serif', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: set.isWarmup ? 'rgba(148,163,184,0.35)' : 'rgba(148,163,184,0.45)' }}>
           {set.isWarmup ? `W${set.setNumber}` : `Set ${set.setNumber}`}
         </span>
       )}
       {isCardio ? (
         <>
-          <input
+          <SLNumberInput
             name={`${p}durationMinutes`}
             form={formId}
-            type="number"
             min="0"
             defaultValue={set.durationMinutes ?? ''}
             placeholder="min"
-            className={`w-[60px] ${inputCls}`}
+            width={60}
           />
-          <span className="text-[11px] text-zinc-500">min</span>
+          <SetLabel>min</SetLabel>
         </>
       ) : isMobility ? (
         <>
-          <input
+          <SLNumberInput
             name={`${p}reps`}
             form={formId}
-            type="number"
             min="0"
             defaultValue={set.reps ?? ''}
             placeholder="seg"
-            className={`w-[60px] ${inputCls}`}
+            width={60}
           />
-          <span className="text-[11px] text-zinc-500">seg</span>
+          <SetLabel>seg</SetLabel>
         </>
       ) : (
         <>
-          <input
+          <SLNumberInput
             name={`${p}weightKg`}
             form={formId}
-            type="number"
             step="0.5"
             min="0"
             defaultValue={set.weightKg ?? ''}
             placeholder="kg"
-            className={`w-[58px] ${inputCls}`}
+            width={60}
           />
-          <span className="text-zinc-500 text-[11px]">×</span>
-          <input
+          <SetLabel>kg</SetLabel>
+          <SLNumberInput
             name={`${p}reps`}
             form={formId}
-            type="number"
             min="0"
             defaultValue={set.reps ?? ''}
             placeholder="reps"
-            className={`w-[52px] ${inputCls}`}
+            width={60}
           />
-          <span className="text-zinc-500 text-[11px]">RIR</span>
-          <input
+          <SetLabel>reps</SetLabel>
+          <SLNumberInput
             name={`${p}rir`}
             form={formId}
-            type="number"
             min="0"
             max="10"
             defaultValue={set.rir ?? ''}
             placeholder="rir"
-            className={`w-[44px] ${inputCls}`}
+            width={52}
           />
+          <SetLabel>RIR</SetLabel>
         </>
       )}
-      <input
+      <SLInput
         name={`${p}notes`}
         form={formId}
         type="text"
         defaultValue={set.notes ?? ''}
         placeholder="notas"
-        className={`flex-1 min-w-[50px] ${inputCls}`}
+        style={{ flex: 1, minWidth: 80 }}
       />
     </div>
+  )
+}
+
+function SetLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ fontFamily: 'var(--font-barlow), sans-serif', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(148,163,184,0.45)' }}>
+      {children}
+    </span>
   )
 }
 
@@ -394,29 +415,53 @@ function AddExerciseForm({
 
   return (
     <>
-      <button
+      <SLButton
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[12px] text-zinc-400 hover:text-zinc-100 transition-colors"
+        variant="ghost"
+        size="sm"
+        style={{ alignSelf: 'flex-start', textTransform: 'uppercase' }}
       >
         + Añadir ejercicio
-      </button>
+      </SLButton>
 
       <dialog
         ref={dialogRef}
         onClose={closeDialog}
-        className="rounded-xl border border-white/[0.14] bg-zinc-900 p-5 w-[320px] shadow-xl backdrop:bg-black/60"
+        className="backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+        style={{
+          padding: 24,
+          borderRadius: 10,
+          border: '1.5px solid rgba(96,165,250,0.4)',
+          boxShadow: '0 0 24px rgba(59,130,246,0.3)',
+          background: 'linear-gradient(160deg, rgba(10,22,45,0.99), rgba(5,8,18,0.99))',
+          animation: 'lvlReveal 0.3s ease',
+          width: 320,
+          color: '#e2e8f0',
+        }}
       >
-        <h2 className="text-[14px] font-semibold text-zinc-100 mb-4">Nuevo ejercicio</h2>
+        <h2
+          style={{
+            margin: '0 0 16px',
+            fontFamily: 'var(--font-barlow), sans-serif',
+            fontSize: 11,
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: 'rgba(96,165,250,0.6)',
+            textAlign: 'center',
+          }}
+        >
+          — AÑADIR EJERCICIO —
+        </h2>
 
         <form
           action={async (fd) => { await action(fd); closeDialog() }}
-          className="flex flex-col gap-3"
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
         >
           <input type="hidden" name={idField} value={idValue} />
 
-          <div className="relative">
-            <input
+          <div style={{ position: 'relative' }}>
+            <SLInput
               name="exerciseName"
               type="text"
               required
@@ -439,17 +484,45 @@ function AddExerciseForm({
               aria-expanded={showSuggestions}
               aria-controls="exercise-suggestions"
               placeholder="Nombre del ejercicio"
-              className="w-full bg-white/[0.08] border border-white/[0.12] rounded-[5px] py-[6px] px-3 text-[12px] text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-white/30"
             />
             {showSuggestions && suggestions.length > 0 && (
-              <ul id="exercise-suggestions" role="listbox" className="absolute left-0 right-0 top-full mt-1 z-10 max-h-48 overflow-y-auto rounded-[5px] border border-white/[0.12] bg-zinc-900 shadow-xl">
+              <ul
+                id="exercise-suggestions"
+                role="listbox"
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: '100%',
+                  marginTop: 4,
+                  zIndex: 10,
+                  maxHeight: 192,
+                  overflowY: 'auto',
+                  borderRadius: 5,
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  background: 'rgba(7,12,22,0.95)',
+                  boxShadow: '0 0 18px rgba(0,0,0,0.35)',
+                  listStyle: 'none',
+                  padding: 0,
+                }}
+              >
                 {suggestions.map((s, index) => (
                   <li key={s.id} role="option" aria-selected={index === highlightIndex}>
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => selectSuggestion(s)}
-                      className={`w-full text-left px-3 py-1.5 text-[12px] text-zinc-200 hover:bg-white/[0.06] ${index === highlightIndex ? 'bg-white/[0.06]' : ''}`}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '6px 10px',
+                        border: 0,
+                        background: index === highlightIndex ? 'rgba(59,130,246,0.15)' : 'transparent',
+                        color: '#e2e8f0',
+                        fontFamily: 'var(--font-rajdhani), sans-serif',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
                     >
                       {s.name}
                     </button>
@@ -460,68 +533,29 @@ function AddExerciseForm({
           </div>
 
           {isCardio ? (
-            <label className="flex flex-col gap-0.5">
-              <span className="text-[11px] text-zinc-500">Minutos</span>
-              <input
-                name="durationMinutes"
-                type="number"
-                min="0"
-                placeholder="min"
-                className="w-24 bg-white/[0.08] border border-white/[0.12] rounded-[5px] py-[6px] px-3 text-[12px] text-zinc-100 focus:outline-none focus:border-white/30"
-              />
-            </label>
+            <SLNumberInput name="durationMinutes" min="0" placeholder="min" label="Minutos" width={90} />
           ) : (
-            <div className="flex gap-2">
-              <label className="flex flex-col gap-0.5">
-                <span className="text-[11px] text-zinc-500">Series</span>
-                <input
-                  name="sets"
-                  type="number"
-                  min="1"
-                  defaultValue={defaultSets}
-                  className="w-16 bg-white/[0.08] border border-white/[0.12] rounded-[5px] py-[6px] px-3 text-[12px] text-zinc-100 focus:outline-none focus:border-white/30"
-                />
-              </label>
-              <label className="flex flex-col gap-0.5">
-                <span className="text-[11px] text-zinc-500">{repsLabel}</span>
-                <input
-                  name="reps"
-                  type="number"
-                  min="0"
-                  defaultValue={defaultReps || ''}
-                  className="w-16 bg-white/[0.08] border border-white/[0.12] rounded-[5px] py-[6px] px-3 text-[12px] text-zinc-100 focus:outline-none focus:border-white/30"
-                />
-              </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <SLNumberInput name="sets" min="1" defaultValue={defaultSets} label="Series" width={64} />
+              <SLNumberInput name="reps" min="0" defaultValue={defaultReps || ''} label={repsLabel} width={64} />
               {defaultRir !== null && (
-                <label className="flex flex-col gap-0.5">
-                  <span className="text-[11px] text-zinc-500">RIR</span>
-                  <input
-                    name="rir"
-                    type="number"
-                    min="0"
-                    max="10"
-                    defaultValue={defaultRir}
-                    className="w-14 bg-white/[0.08] border border-white/[0.12] rounded-[5px] py-[6px] px-3 text-[12px] text-zinc-100 focus:outline-none focus:border-white/30"
-                  />
-                </label>
+                <SLNumberInput name="rir" min="0" max="10" defaultValue={defaultRir} label="RIR" width={56} />
               )}
             </div>
           )}
 
-          <div className="flex gap-2 justify-end mt-1">
-            <button
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+            <SLButton
               type="button"
               onClick={closeDialog}
-              className="px-3 py-1.5 text-[12px] text-zinc-400 hover:text-zinc-200 transition-colors"
+              variant="ghost"
+              size="sm"
             >
               Cancelar
-            </button>
-            <button
-              type="submit"
-              className="rounded-[0.625rem] border border-white/[0.18] px-4 py-1.5 text-[12px] font-medium text-zinc-100 hover:bg-zinc-800 transition-colors"
-            >
+            </SLButton>
+            <SLButton type="submit" variant="primary" size="sm">
               Añadir
-            </button>
+            </SLButton>
           </div>
         </form>
       </dialog>

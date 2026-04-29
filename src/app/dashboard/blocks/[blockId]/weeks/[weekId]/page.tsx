@@ -7,6 +7,7 @@ import Link from 'next/link'
 import WorkoutSections from '@/app/dashboard/WorkoutSections'
 import { copyWorkoutToWeek, deleteWorkout } from '@/app/dashboard/actions'
 import { DeleteWorkoutForm } from './DeleteWorkoutForm'
+import { SLButton, SLCard, SLPageHeader, SLSelect } from '@/components/ui-sl'
 
 type Params = Promise<{ blockId: string; weekId: string }>
 
@@ -62,49 +63,55 @@ export default async function WeekPage({ params }: { params: Params }) {
   const redirectTo = `/dashboard/blocks/${blockId}/weeks/${weekId}`
 
   return (
-    <main className="flex flex-1 flex-col gap-6 max-w-[640px] p-7">
-      <nav className="flex items-center gap-2 text-[12px] text-zinc-400">
-        <Link href="/dashboard" className="hover:text-zinc-100 transition-colors">Dashboard</Link>
-        <span>›</span>
-        <Link href={`/dashboard/blocks/${blockId}`} className="hover:text-zinc-100 transition-colors">{block.name}</Link>
-        <span>›</span>
-        <span className="text-zinc-100">Semana {week.weekNumber}</span>
-      </nav>
-
-      <div className="flex items-center justify-between">
-        <h1 className="text-[22px] font-semibold tracking-tight text-zinc-100">Semana {week.weekNumber}</h1>
-        <Link
-          href={`/dashboard/blocks/${blockId}`}
-          className="rounded-[0.625rem] bg-zinc-100 px-[14px] py-[7px] text-[13px] font-medium text-zinc-900 hover:opacity-85 transition-opacity"
-        >
-          Guardar semana
-        </Link>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <SLPageHeader
+        backHref={`/dashboard/blocks/${blockId}`}
+        backLabel="< BLOQUE"
+        title={`Semana ${week.weekNumber}`}
+        subtitle={block.name}
+        right={<SLButton variant="primary" size="sm" href={`/dashboard/blocks/${blockId}`}>Guardar</SLButton>}
+      />
 
       {weekWorkouts.length === 0 && (
-        <p className="text-zinc-500 text-[13px]">No hay entrenos en esta semana. Añade uno de los entrenos guardados.</p>
+        <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.45)' }}>No hay entrenos en esta semana. Añade uno de los entrenos guardados.</p>
       )}
 
       {weekWorkouts.map((workout) => (
-        <details key={workout.id} className="rounded-[0.625rem] border border-white/10 overflow-hidden">
-          <summary className="cursor-pointer px-[14px] py-[10px] text-zinc-200 text-[13px] font-medium list-none flex items-center justify-between select-none hover:bg-zinc-800/50 transition-colors">
-            {workout.name ?? `Entreno #${workout.id}`}
-            <div className="flex items-center gap-3">
-              <DeleteWorkoutForm action={deleteWorkoutAction} workoutId={workout.id} />
-              <span className="text-zinc-500 text-xs">▸</span>
+        <SLCard key={workout.id} style={{ padding: 0, overflow: 'hidden' }}>
+          <details>
+            <summary
+              style={{
+                cursor: 'pointer',
+                padding: '10px 14px',
+                listStyle: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                userSelect: 'none',
+                fontFamily: 'var(--font-rajdhani), sans-serif',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#e2e8f0',
+              }}
+            >
+              {workout.name ?? `Entreno #${workout.id}`}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <DeleteWorkoutForm action={deleteWorkoutAction} workoutId={workout.id} />
+                <span style={{ color: 'rgba(148,163,184,0.45)', fontSize: 12 }}>▸</span>
+              </div>
+            </summary>
+            <div style={{ borderTop: '1px solid rgba(59,130,246,0.1)', padding: '12px 12px 14px' }}>
+              <WorkoutSections workout={workout} redirectTo={redirectTo} />
             </div>
-          </summary>
-          <div className="border-t border-white/10 px-4 pb-4 pt-3">
-            <WorkoutSections workout={workout} redirectTo={redirectTo} />
-          </div>
-        </details>
+          </details>
+        </SLCard>
       ))}
 
       {availableWorkouts.length > 0 && (
-        <form action={copyWorkoutAction} className="flex items-center gap-3 mt-2">
-          <select
+        <form action={copyWorkoutAction} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <SLSelect
             name="workoutId"
-            className="flex-1 rounded-[0.625rem] border border-white/[0.18] bg-white/[0.04] px-3 py-2 text-[13px] text-zinc-100 focus:outline-none focus:border-white/30"
+            style={{ flex: 1 }}
           >
             <option value="">Selecciona un entreno…</option>
             {availableWorkouts.map((w) => (
@@ -112,24 +119,21 @@ export default async function WeekPage({ params }: { params: Params }) {
                 {w.name ?? `Entreno #${w.id}`}
               </option>
             ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-[0.625rem] border border-white/[0.18] px-[14px] py-[7px] text-[13px] font-medium text-zinc-100 hover:bg-zinc-800 transition-colors whitespace-nowrap"
-          >
+          </SLSelect>
+          <SLButton type="submit" variant="secondary" size="sm" style={{ whiteSpace: 'nowrap' }}>
             + Añadir entreno
-          </button>
+          </SLButton>
         </form>
       )}
 
       {availableWorkouts.length === 0 && (
-        <p className="text-zinc-500 text-[13px]">
+        <p style={{ margin: 0, fontSize: 13, color: 'rgba(148,163,184,0.45)' }}>
           No tienes entrenos guardados disponibles.{' '}
-          <Link href="/dashboard/workouts/new" className="text-zinc-300 hover:text-zinc-100 underline">
+          <Link href="/dashboard/workouts/new" style={{ color: '#93c5fd' }}>
             Crear uno nuevo
           </Link>
         </p>
       )}
-    </main>
+    </div>
   )
 }

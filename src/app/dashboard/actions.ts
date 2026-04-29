@@ -175,7 +175,7 @@ export async function deleteWorkout(workoutId: number) {
 // Sessions (create sub-sessions within a workout)
 // ---------------------------------------------------------------------------
 
-export async function createMobilitySession(workoutId: number, _formData?: FormData) {
+export async function createMobilitySession(workoutId: number) {
   await requireUser()
   const existing = await db.query.mobilitySessions.findFirst({
     where: eq(mobilitySessions.workoutId, workoutId),
@@ -186,7 +186,7 @@ export async function createMobilitySession(workoutId: number, _formData?: FormD
   revalidatePath('/dashboard', 'layout')
 }
 
-export async function createBasicsSession(workoutId: number, _formData?: FormData) {
+export async function createBasicsSession(workoutId: number) {
   await requireUser()
   const existing = await db.query.basicsSessions.findFirst({
     where: eq(basicsSessions.workoutId, workoutId),
@@ -197,7 +197,7 @@ export async function createBasicsSession(workoutId: number, _formData?: FormDat
   revalidatePath('/dashboard', 'layout')
 }
 
-export async function createCardioSession(workoutId: number, _formData?: FormData) {
+export async function createCardioSession(workoutId: number) {
   await requireUser()
   const existing = await db.query.cardioSessions.findFirst({
     where: eq(cardioSessions.workoutId, workoutId),
@@ -388,7 +388,7 @@ export async function addExerciseToCardio(formData: FormData) {
   revalidatePath('/dashboard', 'layout')
 }
 
-export async function removeExercise(sessionExerciseId: number, _formData?: FormData) {
+export async function removeExercise(sessionExerciseId: number) {
   await requireUser()
   await db.delete(sessionExercises).where(eq(sessionExercises.id, sessionExerciseId))
   revalidatePath('/dashboard', 'layout')
