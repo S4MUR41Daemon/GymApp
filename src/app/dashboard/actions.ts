@@ -3,7 +3,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { eq, and, max, isNull } from 'drizzle-orm'
+import { eq, and, max, ilike, inArray, or } from 'drizzle-orm'
 import { db } from '@/db'
 import {
   trainingBlocks,
@@ -215,11 +215,62 @@ export async function createCardioSession(workoutId: number, _formData?: FormDat
 async function findOrCreateExercise(name: string): Promise<number> {
   const trimmed = name.trim()
   const existing = await db.query.exercises.findFirst({
-    where: eq(exercises.name, trimmed),
+    where: ilike(exercises.name, trimmed),
   })
   if (existing) return existing.id
   const [created] = await db.insert(exercises).values({ name: trimmed }).returning({ id: exercises.id })
   return created.id
+}
+
+export async function searchExercises(query: string): Promise<Array<{ id: number; name: string }>> {
+  const { userId } = await auth()
+  if (!userId) return []
+
+  const trimmed = query.trim()
+  if (trimmed.length < 2) return []
+
+  const workoutExerciseIds = db
+    .select({ id: sessionExercises.exerciseId })
+    .from(sessionExercises)
+    .innerJoin(workouts, eq(sessionExercises.workoutId, workouts.id))
+    .where(eq(workouts.userId, userId))
+
+  const mobilityExerciseIds = db
+    .select({ id: sessionExercises.exerciseId })
+    .from(sessionExercises)
+    .innerJoin(mobilitySessions, eq(sessionExercises.mobilitySessionId, mobilitySessions.id))
+    .innerJoin(workouts, eq(mobilitySessions.workoutId, workouts.id))
+    .where(eq(workouts.userId, userId))
+
+  const cardioExerciseIds = db
+    .select({ id: sessionExercises.exerciseId })
+    .from(sessionExercises)
+    .innerJoin(cardioSessions, eq(sessionExercises.cardioSessionId, cardioSessions.id))
+    .innerJoin(workouts, eq(cardioSessions.workoutId, workouts.id))
+    .where(eq(workouts.userId, userId))
+
+  const personalResults = await db
+    .select({ id: exercises.id, name: exercises.name })
+    .from(exercises)
+    .where(and(
+      ilike(exercises.name, `%${trimmed}%`),
+      or(
+        inArray(exercises.id, workoutExerciseIds),
+        inArray(exercises.id, mobilityExerciseIds),
+        inArray(exercises.id, cardioExerciseIds),
+      ),
+    ))
+    .orderBy(exercises.name)
+    .limit(8)
+
+  if (personalResults.length > 0) return personalResults
+
+  return db
+    .select({ id: exercises.id, name: exercises.name })
+    .from(exercises)
+    .where(ilike(exercises.name, `%${trimmed}%`))
+    .orderBy(exercises.name)
+    .limit(8)
 }
 
 export async function addExerciseToMobility(formData: FormData) {

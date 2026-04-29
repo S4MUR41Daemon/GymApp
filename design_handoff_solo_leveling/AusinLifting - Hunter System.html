@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>AusinLifting — Hunter System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body {
+      background: #06080f;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    #particle-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+    }
+    #root {
+      position: relative; z-index: 1;
+      display: flex; justify-content: center;
+      height: 100%;
+    }
+    .phone {
+      width: min(390px, 100vw);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(175deg, #07101e 0%, #06080f 60%);
+      border-left: 1px solid rgba(59,130,246,0.08);
+      border-right: 1px solid rgba(59,130,246,0.08);
+      overflow: hidden;
+      position: relative;
+    }
+    /* scanlines */
+    .phone::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+      pointer-events: none; z-index: 50;
+    }
+    /* scroll area */
+    .screen-scroll {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 16px;
+    }
+    .screen-scroll::-webkit-scrollbar { width: 2px; }
+    .screen-scroll::-webkit-scrollbar-track { background: transparent; }
+    .screen-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.25); border-radius: 1px; }
+
+    /* XP bar */
+    .xp-track {
+      height: 5px; background: rgba(59,130,246,0.08);
+      border-radius: 3px; border: 1px solid rgba(59,130,246,0.15);
+      overflow: visible; position: relative;
+    }
+    .xp-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, #1d4ed8, #3b82f6, #7dd3fc);
+      box-shadow: 0 0 8px rgba(96,165,250,0.7), 0 0 20px rgba(59,130,246,0.3);
+      position: relative; transition: width 1.2s cubic-bezier(.25,.8,.25,1);
+    }
+    .xp-fill::after {
+      content: '';
+      position: absolute; right: -1px; top: -3px;
+      width: 3px; height: 11px; background: #bfdbfe;
+      border-radius: 2px; box-shadow: 0 0 6px #60a5fa;
+    }
+
+    /* Tab nav */
+    .tab-nav {
+      display: flex; border-top: 1px solid rgba(59,130,246,0.1);
+      background: rgba(5,7,13,0.97); backdrop-filter: blur(12px);
+      padding: 6px 0 10px; flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; padding: 5px 0;
+      background: none; border: none; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn .ti { font-size: 19px; line-height: 1; transition: filter 0.2s; }
+    .tab-btn .tl {
+      font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif;
+      transition: color 0.2s;
+    }
+    .tab-btn.active .tl { color: #60a5fa; }
+    .tab-btn.active .ti { filter: drop-shadow(0 0 5px rgba(96,165,250,0.7)); }
+    .tab-btn:not(.active) .tl { color: rgba(148,163,184,0.4); }
+    .tab-btn:not(.active) .ti { opacity: 0.3; }
+
+    /* Cards */
+    .sl-card {
+      border: 1px solid rgba(59,130,246,0.12);
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(10,22,44,0.85), rgba(7,12,22,0.7));
+      padding: 14px 16px;
+    }
+    .sl-card-hover {
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .sl-card-hover:hover {
+      border-color: rgba(59,130,246,0.3);
+      box-shadow: 0 0 16px rgba(59,130,246,0.08);
+    }
+
+    /* Quest card */
+    .quest-card {
+      border: 1px solid rgba(59,130,246,0.14);
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(10,20,40,0.9), rgba(6,10,20,0.8));
+      padding: 12px 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .quest-card.qdone {
+      border-color: rgba(34,197,94,0.2);
+      background: linear-gradient(135deg, rgba(5,18,12,0.9), rgba(6,10,20,0.8));
+    }
+
+    /* set check */
+    .set-ck {
+      width: 24px; height: 24px; border-radius: 5px;
+      border: 1px solid rgba(59,130,246,0.3);
+      background: rgba(59,130,246,0.04);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .set-ck.ck-done {
+      background: rgba(34,197,94,0.14);
+      border-color: rgba(34,197,94,0.45);
+      box-shadow: 0 0 8px rgba(34,197,94,0.2);
+    }
+
+    /* Rank badge glow animation */
+    @keyframes rankGlow {
+      0%, 100% { box-shadow: 0 0 6px var(--rg), inset 0 0 6px var(--ri); }
+      50% { box-shadow: 0 0 16px var(--rg), 0 0 28px var(--rg2), inset 0 0 8px var(--ri); }
+    }
+    @keyframes streakAnim {
+      0%, 100% { transform: scaleY(1) rotate(-3deg); }
+      50% { transform: scaleY(1.15) rotate(3deg); }
+    }
+    @keyframes sysPulse {
+      0%, 100% { border-color: rgba(59,130,246,0.3); box-shadow: 0 0 20px rgba(59,130,246,0.15), 0 0 60px rgba(59,130,246,0.05); }
+      50% { border-color: rgba(96,165,250,0.7); box-shadow: 0 0 40px rgba(59,130,246,0.4), 0 0 80px rgba(59,130,246,0.15); }
+    }
+    @keyframes lvlReveal {
+      0% { opacity: 0; transform: scale(0.88) translateY(24px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes xpGain {
+      0% { opacity: 0; transform: translateY(0); }
+      30% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-28px); }
+    }
+    @keyframes questDone {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    @keyframes portalSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Level up overlay */
+    .lvl-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(2,3,8,0.96);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lvl-box {
+      border: 1px solid rgba(59,130,246,0.4);
+      border-radius: 14px; padding: 40px 30px;
+      text-align: center; max-width: 310px; width: 90%;
+      background: linear-gradient(160deg, rgba(10,22,45,0.99), rgba(5,8,18,0.99));
+      animation: lvlReveal 0.4s ease, sysPulse 2.5s ease-in-out 0.4s infinite;
+      position: relative; overflow: hidden;
+    }
+    .lvl-box::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 60%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(96,165,250,0.8), transparent);
+    }
+    .lvl-box::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.12) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .corner {
+      position: absolute; width: 14px; height: 14px;
+    }
+    .corner-tl { top: 8px; left: 8px; border-top: 1.5px solid rgba(96,165,250,0.6); border-left: 1.5px solid rgba(96,165,250,0.6); border-radius: 2px 0 0 0; }
+    .corner-tr { top: 8px; right: 8px; border-top: 1.5px solid rgba(96,165,250,0.6); border-right: 1.5px solid rgba(96,165,250,0.6); border-radius: 0 2px 0 0; }
+    .corner-bl { bottom: 8px; left: 8px; border-bottom: 1.5px solid rgba(96,165,250,0.6); border-left: 1.5px solid rgba(96,165,250,0.6); border-radius: 0 0 0 2px; }
+    .corner-br { bottom: 8px; right: 8px; border-bottom: 1.5px solid rgba(96,165,250,0.6); border-right: 1.5px solid rgba(96,165,250,0.6); border-radius: 0 0 2px 0; }
+
+    .sys-lbl {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(96,165,250,0.55);
+    }
+    .lvl-big {
+      font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      font-size: 64px; line-height: 1; letter-spacing: 0.03em;
+      background: linear-gradient(180deg, #bfdbfe 0%, #3b82f6 60%, #1d4ed8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 16px rgba(59,130,246,0.6));
+    }
+
+    /* Progress bar generic */
+    .prog-track {
+      height: 4px; background: rgba(59,130,246,0.08);
+      border-radius: 2px; overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, #1d4ed8, #60a5fa);
+      box-shadow: 0 0 6px rgba(96,165,250,0.5);
+      transition: width 0.8s ease;
+    }
+
+    /* Rank progression dots */
+    .rank-row { display: flex; align-items: center; gap: 0; }
+    .rank-node {
+      display: flex; flex-direction: column; align-items: center; flex: 1;
+    }
+    .rank-line { flex: 1; height: 1px; }
+    .rank-dot {
+      width: 28px; height: 28px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px;
+    }
+
+    /* Glow btn */
+    .glow-btn {
+      border: 1px solid rgba(59,130,246,0.4);
+      border-radius: 8px; background: rgba(59,130,246,0.1);
+      color: #93c5fd; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+      font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 12px 20px; cursor: pointer; width: 100%;
+      transition: all 0.2s;
+      box-shadow: 0 0 12px rgba(59,130,246,0.15);
+    }
+    .glow-btn:hover {
+      background: rgba(59,130,246,0.2);
+      border-color: rgba(96,165,250,0.6);
+      box-shadow: 0 0 24px rgba(59,130,246,0.3);
+      color: #bfdbfe;
+    }
+    .glow-btn:active { transform: scale(0.98); }
+
+    .ghost-btn {
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
+      background: none; color: rgba(148,163,184,0.7);
+      font-size: 12px; font-weight: 500; padding: 8px 14px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ghost-btn:hover { border-color: rgba(255,255,255,0.2); color: #e2e8f0; }
+
+    /* Title badge */
+    .title-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid rgba(245,158,11,0.3); border-radius: 5px;
+      padding: 3px 10px; background: rgba(245,158,11,0.06);
+      font-size: 11px; font-weight: 600; color: #fbbf24;
+      letter-spacing: 0.04em;
+    }
+    .title-badge.inactive {
+      border-color: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      color: rgba(148,163,184,0.5);
+    }
+
+    .slide-up { animation: slideUp 0.25s ease; }
+  </style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ── TWEAK DEFAULTS ──────────────────────────────────────── */
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "glowIntensity": "full",
+  "accentColor": "blue",
+  "hunterRank": "E",
+  "particleDensity": 40
+}/*EDITMODE-END*/;
+
+/* ── DATA ────────────────────────────────────────────────── */
+const RANKS_CFG = {
+  E: { color: '#94a3b8', glow: 'rgba(148,163,184,0.5)', glow2: 'rgba(148,163,184,0.15)' },
+  D: { color: '#22c55e', glow: 'rgba(34,197,94,0.5)',   glow2: 'rgba(34,197,94,0.15)' },
+  C: { color: '#3b82f6', glow: 'rgba(59,130,246,0.6)',  glow2: 'rgba(59,130,246,0.15)' },
+  B: { color: '#a855f7', glow: 'rgba(168,85,247,0.6)',  glow2: 'rgba(168,85,247,0.15)' },
+  A: { color: '#f97316', glow: 'rgba(249,115,22,0.6)',  glow2: 'rgba(249,115,22,0.15)' },
+  S: { color: '#f59e0b', glow: 'rgba(245,158,11,0.7)',  glow2: 'rgba(245,158,11,0.2)' },
+};
+const RANK_ORDER = ['E','D','C','B','A','S'];
+
+const HUNTER_BASE = {
+  name: 'Daemon', level: 23, xp: 7450, xpMax: 10000, streak: 14,
+  guild: 'Shadow Legion',
+  activeTitle: 'Iron Will',
+  titles: ['Iron Will','First Steps','Consistent','Iron Novice'],
+};
+
+const DAILY_QUESTS = [
+  { id:1, title:'Completar entrenamiento', reward:300, done:true },
+  { id:2, title:'Registrar 3 ejercicios', reward:150, done:true },
+  { id:3, title:'Superar PR en Sentadilla', reward:500, done:false },
+];
+const WEEKLY_QUESTS = [
+  { id:4, title:'Entrenar 4 días esta semana', reward:1000, done:false, prog:3, total:4 },
+  { id:5, title:'Completar Semana 2 del bloque', reward:800, done:false, prog:1, total:2 },
+];
+
+const GUILD_MEMBERS = [
+  { name:'Daemon',  level:23, rank:'C', role:'Líder',   streak:14 },
+  { name:'Ironclad',level:31, rank:'B', role:'Vice',    streak:22 },
+  { name:'Ashfire', level:18, rank:'D', role:'Miembro', streak:7  },
+  { name:'Velox',   level:27, rank:'C', role:'Miembro', streak:5  },
+];
+
+const BLOCK = {
+  name:'Bloque de Fuerza 1', week:2, totalWeeks:8,
+  workoutName:'Día A — Sentadilla + Press',
+  exercises:[
+    { id:1, name:'Sentadilla', sets:[{n:1,kg:140,reps:5},{n:2,kg:140,reps:5},{n:3,kg:140,reps:5}] },
+    { id:2, name:'Press Banca', sets:[{n:1,kg:100,reps:5},{n:2,kg:100,reps:5},{n:3,kg:100,reps:5}] },
+    { id:3, name:'RDL',        sets:[{n:1,kg:100,reps:8},{n:2,kg:100,reps:8},{n:3,kg:100,reps:7}] },
+  ],
+};
+
+/* ── PARTICLES ────────────────────────────────────────────── */
+function startParticles(density) {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return () => {};
+  const ctx = canvas.getContext('2d');
+  let animId;
+  const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+  resize();
+  window.addEventListener('resize', resize);
+  const pts = Array.from({length: density}, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 1.4 + 0.3,
+    vy: -(Math.random() * 0.25 + 0.08),
+    vx: (Math.random() - 0.5) * 0.15,
+    op: Math.random() * 0.45 + 0.1,
+    opDir: Math.random() > 0.5 ? 1 : -1,
+    cyan: Math.random() > 0.65,
+  }));
+  const draw = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pts.forEach(p => {
+      const col = p.cyan ? '#22d3ee' : '#3b82f6';
+      const alpha = Math.floor(p.op * 255).toString(16).padStart(2,'0');
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = col + alpha; ctx.fill();
+      const grd = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);
+      grd.addColorStop(0, col+'33'); grd.addColorStop(1, 'transparent');
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r*5, 0, Math.PI*2);
+      ctx.fillStyle = grd; ctx.fill();
+      p.y += p.vy; p.x += p.vx;
+      p.op += p.opDir * 0.004;
+      if (p.op > 0.55) p.opDir = -1;
+      if (p.op < 0.06) p.opDir = 1;
+      if (p.y < -10) { p.y = canvas.height + 5; p.x = Math.random() * canvas.width; }
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    });
+    animId = requestAnimationFrame(draw);
+  };
+  draw();
+  return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
+}
+
+/* ── SHARED COMPONENTS ───────────────────────────────────── */
+const RankBadge = ({ rank, size='md' }) => {
+  const r = RANKS_CFG[rank] || RANKS_CFG.E;
+  const sz = size==='sm' ? 22 : size==='lg' ? 44 : size==='xl' ? 64 : 28;
+  const fs = size==='sm' ? 11 : size==='lg' ? 22 : size==='xl' ? 32 : 14;
+  return (
+    <span style={{
+      display:'inline-flex', alignItems:'center', justifyContent:'center',
+      width:sz, height:sz, borderRadius:sz*0.18,
+      border:`1.5px solid ${r.color}`,
+      color:r.color, fontSize:fs, flexShrink:0,
+      background:`${r.color}10`,
+      '--rg': r.glow, '--rg2': r.glow2, '--ri': `${r.color}20`,
+      animation:'rankGlow 2.5s ease-in-out infinite',
+      fontFamily:"'Rajdhani', sans-serif", fontWeight:700,
+    }}>{rank}</span>
+  );
+};
+
+const SysLabel = ({children}) => (
+  <span className="sys-lbl">{children}</span>
+);
+
+const XPBar = ({current, max}) => {
+  const pct = Math.round(current/max*100);
+  return (
+    <div>
+      <div className="xp-track">
+        <div className="xp-fill" style={{width:`${pct}%`}} />
+      </div>
+      <div style={{display:'flex', justifyContent:'space-between', marginTop:5}}>
+        <span style={{fontSize:10, color:'rgba(96,165,250,0.6)', fontFamily:"'Barlow Condensed',sans-serif", letterSpacing:'0.06em'}}>
+          XP {current.toLocaleString()} / {max.toLocaleString()}
+        </span>
+        <span style={{fontSize:10, color:'rgba(96,165,250,0.6)', fontFamily:"'Barlow Condensed',sans-serif"}}>{pct}%</span>
+      </div>
+    </div>
+  );
+};
+
+const Divider = ({style}) => (
+  <div style={{height:1, background:'rgba(59,130,246,0.07)', margin:'12px 0', ...style}} />
+);
+
+/* ── LEVEL UP MODAL ───────────────────────────────────────── */
+const LevelUpModal = ({newLevel, rank, onClose}) => (
+  <div className="lvl-overlay" onClick={onClose}>
+    <div className="lvl-box" onClick={e=>e.stopPropagation()}>
+      <div className="corner corner-tl" /><div className="corner corner-tr" />
+      <div className="corner corner-bl" /><div className="corner corner-br" />
+      {/* Portal ring */}
+      <div style={{width:80, height:80, borderRadius:'50%', border:'2px solid rgba(59,130,246,0.3)', margin:'0 auto 20px', position:'relative', display:'flex', alignItems:'center', justifyContent:'center'}}>
+        <div style={{position:'absolute', inset:4, borderRadius:'50%', border:'1px solid rgba(59,130,246,0.2)', animation:'portalSpin 3s linear infinite'}} />
+        <div style={{position:'absolute', inset:-6, borderRadius:'50%', border:'1px dashed rgba(59,130,246,0.15)', animation:'portalSpin 8s linear infinite reverse'}} />
+        <RankBadge rank={rank} size="lg" />
+      </div>
+      <SysLabel>— SYSTEM NOTIFICATION —</SysLabel>
+      <div className="lvl-big" style={{margin:'10px 0 4px'}}>LEVEL UP</div>
+      <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:28, color:'#93c5fd', letterSpacing:'0.08em', marginBottom:20}}>
+        LEVEL {newLevel}
+      </div>
+      <div style={{fontSize:12, color:'rgba(148,163,184,0.7)', marginBottom:8, lineHeight:1.6}}>
+        Has alcanzado el nivel <span style={{color:'#60a5fa', fontWeight:600}}>{newLevel}</span>.<br/>
+        Tu fuerza continúa creciendo, Hunter.
+      </div>
+      <div style={{display:'flex', alignItems:'center', gap:8, justifyContent:'center', marginBottom:24}}>
+        <span style={{fontSize:11, color:'rgba(251,191,36,0.8)', fontWeight:600}}>✦ Nuevo título desbloqueado:</span>
+        <span className="title-badge">Iron Warrior</span>
+      </div>
+      <button className="glow-btn" onClick={onClose}>CONTINUAR</button>
+    </div>
+  </div>
+);
+
+/* ── TOP BAR ──────────────────────────────────────────────── */
+const TopBar = ({hunter, rank, onTriggerLevelUp}) => (
+  <div style={{padding:'12px 16px 10px', borderBottom:'1px solid rgba(59,130,246,0.07)', flexShrink:0}}>
+    <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:10}}>
+      <div style={{display:'flex', alignItems:'center', gap:8}}>
+        <div style={{width:30, height:30, borderRadius:7, background:'linear-gradient(135deg,#1d4ed8,#0ea5e9)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 12px rgba(59,130,246,0.4)', fontSize:13, fontWeight:700, fontFamily:"'Rajdhani',sans-serif", color:'white', flexShrink:0}}>A</div>
+        <span style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:15, letterSpacing:'0.06em', color:'#e2e8f0'}}>AUSINLIFTING</span>
+      </div>
+      <div style={{flex:1}} />
+      <div style={{display:'flex', alignItems:'center', gap:4}}>
+        <span style={{fontSize:15, animation:'streakAnim 1.8s ease-in-out infinite', display:'inline-block'}}>🔥</span>
+        <span style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:14, color:'#f97316'}}>{hunter.streak}</span>
+      </div>
+      <div style={{display:'flex', alignItems:'center', gap:6, padding:'3px 9px', borderRadius:5, border:'1px solid rgba(59,130,246,0.25)', background:'rgba(59,130,246,0.06)', cursor:'pointer'}} onClick={onTriggerLevelUp}>
+        <RankBadge rank={rank} size="sm" />
+        <span style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:13, color:'#93c5fd', letterSpacing:'0.04em'}}>LVL {hunter.level}</span>
+      </div>
+    </div>
+    <XPBar current={hunter.xp} max={hunter.xpMax} />
+  </div>
+);
+
+/* ── BOTTOM NAV ───────────────────────────────────────────── */
+const TABS = [
+  {id:'dashboard', icon:'⚡', label:'Base'},
+  {id:'status',    icon:'🛡️',  label:'Status'},
+  {id:'training',  icon:'⚔️',  label:'Training'},
+  {id:'quests',    icon:'📜',  label:'Quests'},
+  {id:'guild',     icon:'🏴',  label:'Guild'},
+];
+const BottomNav = ({active, onTab}) => (
+  <div className="tab-nav">
+    {TABS.map(t => (
+      <button key={t.id} className={`tab-btn ${active===t.id?'active':''}`} onClick={()=>onTab(t.id)}>
+        <span className="ti">{t.icon}</span>
+        <span className="tl">{t.label}</span>
+      </button>
+    ))}
+  </div>
+);
+
+/* ── DASHBOARD SCREEN ─────────────────────────────────────── */
+const DashboardScreen = ({hunter, rank, onTab, onLevelUp}) => {
+  const doneQ = DAILY_QUESTS.filter(q=>q.done).length;
+  return (
+    <div className="screen-scroll slide-up">
+      {/* Hunter greeting */}
+      <div className="sl-card" style={{marginBottom:14, position:'relative', overflow:'hidden'}}>
+        <div style={{position:'absolute', top:0, right:0, width:120, height:120, background:`radial-gradient(circle at 100% 0%, ${RANKS_CFG[rank].glow2} 0%, transparent 70%)`, pointerEvents:'none'}} />
+        <SysLabel>— HUNTER STATUS —</SysLabel>
+        <div style={{display:'flex', alignItems:'center', gap:12, marginTop:10, marginBottom:12}}>
+          <RankBadge rank={rank} size="lg" />
+          <div>
+            <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:22, color:'#e2e8f0', letterSpacing:'0.04em'}}>{hunter.name}</div>
+            <div style={{fontSize:11, color:'rgba(148,163,184,0.6)', marginTop:1}}>
+              <span className="title-badge" style={{fontSize:10}}>{hunter.activeTitle}</span>
+            </div>
+          </div>
+          <div style={{marginLeft:'auto', textAlign:'right'}}>
+            <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:28, color:RANKS_CFG[rank].color, lineHeight:1}}>{hunter.level}</div>
+            <div style={{fontSize:9, color:'rgba(148,163,184,0.5)', letterSpacing:'0.1em', textTransform:'uppercase', fontFamily:"'Barlow Condensed',sans-serif"}}>NIVEL</div>
+          </div>
+        </div>
+        <XPBar current={hunter.xp} max={hunter.xpMax} />
+      </div>
+
+      {/* Active block */}
+      <div style={{marginBottom:10}}>
+        <SysLabel>— MISIÓN ACTIVA —</SysLabel>
+      </div>
+      <div className="sl-card sl-card-hover" style={{marginBottom:14, cursor:'pointer'}} onClick={()=>onTab('training')}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
+          <div>
+            <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:16, color:'#e2e8f0', letterSpacing:'0.03em'}}>{BLOCK.name}</div>
+            <div style={{fontSize:11, color:'rgba(148,163,184,0.6)', marginTop:2}}>{BLOCK.workoutName}</div>
+          </div>
+          <span style={{fontSize:11, color:'rgba(96,165,250,0.7)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:600, letterSpacing:'0.06em', whiteSpace:'nowrap', marginLeft:8}}>SEM {BLOCK.week}/{BLOCK.totalWeeks}</span>
+        </div>
+        <div className="prog-track">
+          <div className="prog-fill" style={{width:`${(BLOCK.week/BLOCK.totalWeeks)*100}%`}} />
+        </div>
+        <div style={{marginTop:10}}>
+          <button className="glow-btn" style={{fontSize:13, padding:'10px', letterSpacing:'0.12em'}}>
+            ⚔ INICIAR ENTRENAMIENTO
+          </button>
+        </div>
+      </div>
+
+      {/* Daily quests preview */}
+      <div style={{marginBottom:10}}>
+        <SysLabel>— QUESTS DIARIAS —</SysLabel>
+        <span style={{fontSize:10, color:'rgba(96,165,250,0.5)', marginLeft:8}}>{doneQ}/{DAILY_QUESTS.length}</span>
+      </div>
+      <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:14}}>
+        {DAILY_QUESTS.map(q => (
+          <div key={q.id} className={`quest-card ${q.done?'qdone':''}`}>
+            <div style={{display:'flex', alignItems:'center', gap:10}}>
+              <div style={{width:22, height:22, borderRadius:'50%', background:q.done?'rgba(34,197,94,0.15)':'rgba(59,130,246,0.08)', border:`1px solid ${q.done?'rgba(34,197,94,0.4)':'rgba(59,130,246,0.2)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, flexShrink:0}}>
+                {q.done ? '✓' : '○'}
+              </div>
+              <span style={{fontSize:12, color:q.done?'rgba(148,163,184,0.5)':'#e2e8f0', flex:1, textDecoration:q.done?'line-through':'none'}}>{q.title}</span>
+              <span style={{fontSize:10, color:q.done?'rgba(34,197,94,0.5)':'rgba(96,165,250,0.6)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:600, whiteSpace:'nowrap'}}>+{q.reward} XP</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Guild preview */}
+      <div style={{marginBottom:10}}><SysLabel>— GUILD —</SysLabel></div>
+      <div className="sl-card" style={{display:'flex', alignItems:'center', gap:12, cursor:'pointer'}} onClick={()=>onTab('guild')}>
+        <div style={{fontSize:24}}>🏴</div>
+        <div>
+          <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:15, color:'#e2e8f0'}}>{hunter.guild}</div>
+          <div style={{fontSize:11, color:'rgba(148,163,184,0.5)'}}>{GUILD_MEMBERS.length} hunters activos</div>
+        </div>
+        <div style={{marginLeft:'auto', color:'rgba(96,165,250,0.4)', fontSize:16}}>›</div>
+      </div>
+      <div style={{height:16}} />
+    </div>
+  );
+};
+
+/* ── STATUS SCREEN ────────────────────────────────────────── */
+const StatusScreen = ({hunter, rank}) => (
+  <div className="screen-scroll slide-up">
+    {/* Big hunter card */}
+    <div style={{textAlign:'center', padding:'20px 0 16px', position:'relative'}}>
+      <div style={{position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:200, height:200, background:`radial-gradient(circle, ${RANKS_CFG[rank].glow2} 0%, transparent 70%)`, pointerEvents:'none'}} />
+      <RankBadge rank={rank} size="xl" />
+      <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:28, color:'#e2e8f0', letterSpacing:'0.06em', marginTop:12}}>{hunter.name.toUpperCase()}</div>
+      <div style={{marginTop:6}}><span className="title-badge">✦ {hunter.activeTitle}</span></div>
+      <div style={{marginTop:8, fontSize:12, color:'rgba(148,163,184,0.5)'}}>Guild: <span style={{color:'rgba(148,163,184,0.8)', fontWeight:500}}>{hunter.guild}</span></div>
+    </div>
+
+    {/* Level / XP */}
+    <div className="sl-card" style={{marginBottom:14}}>
+      <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
+        <div style={{textAlign:'center', flex:1}}>
+          <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:36, color:RANKS_CFG[rank].color, lineHeight:1}}>{hunter.level}</div>
+          <SysLabel>Nivel</SysLabel>
+        </div>
+        <div style={{width:1, background:'rgba(59,130,246,0.1)'}} />
+        <div style={{textAlign:'center', flex:1}}>
+          <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:36, color:'#f97316', lineHeight:1}}>{hunter.streak}</div>
+          <SysLabel>Streak</SysLabel>
+        </div>
+        <div style={{width:1, background:'rgba(59,130,246,0.1)'}} />
+        <div style={{textAlign:'center', flex:1}}>
+          <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:36, color:'#a855f7', lineHeight:1}}>{DAILY_QUESTS.filter(q=>q.done).length}</div>
+          <SysLabel>Quests hoy</SysLabel>
+        </div>
+      </div>
+      <XPBar current={hunter.xp} max={hunter.xpMax} />
+    </div>
+
+    {/* Rank progression */}
+    <div style={{marginBottom:10}}><SysLabel>— PROGRESIÓN DE RANGO —</SysLabel></div>
+    <div className="sl-card" style={{marginBottom:14}}>
+      <div style={{display:'flex', alignItems:'center', gap:0}}>
+        {RANK_ORDER.map((r, i) => {
+          const isCurrent = r === rank;
+          const isPast = RANK_ORDER.indexOf(r) < RANK_ORDER.indexOf(rank);
+          const rc = RANKS_CFG[r];
+          return (
+            <React.Fragment key={r}>
+              {i > 0 && (
+                <div style={{flex:1, height:2, background:isPast||isCurrent ? `linear-gradient(90deg, ${RANKS_CFG[RANK_ORDER[i-1]].color}40, ${rc.color}40)` : 'rgba(255,255,255,0.05)'}} />
+              )}
+              <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:5}}>
+                <div style={{
+                  width:32, height:32, borderRadius:6,
+                  border:`1.5px solid ${isCurrent||isPast ? rc.color : 'rgba(255,255,255,0.1)'}`,
+                  background:isCurrent ? `${rc.color}18` : isPast ? `${rc.color}08` : 'transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  color:isCurrent||isPast ? rc.color : 'rgba(255,255,255,0.2)',
+                  fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:14,
+                  boxShadow:isCurrent ? `0 0 12px ${rc.glow}` : 'none',
+                }}>{r}</div>
+                {isCurrent && <div style={{width:4, height:4, borderRadius:'50%', background:rc.color, boxShadow:`0 0 6px ${rc.glow}`}} />}
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+      <div style={{marginTop:10, fontSize:11, color:'rgba(148,163,184,0.5)', textAlign:'center'}}>
+        Próximo rango: <span style={{color:RANKS_CFG['B'].color, fontWeight:600}}>RANGO B</span> — supera tus PRs actuales
+      </div>
+    </div>
+
+    {/* Titles */}
+    <div style={{marginBottom:10}}><SysLabel>— TÍTULOS DESBLOQUEADOS —</SysLabel></div>
+    <div style={{display:'flex', flexWrap:'wrap', gap:8, marginBottom:14}}>
+      {hunter.titles.map(t => (
+        <span key={t} className={`title-badge ${t===hunter.activeTitle?'':'inactive'}`}>
+          {t===hunter.activeTitle ? '✦ ' : ''}{t}
+        </span>
+      ))}
+      <span className="title-badge inactive" style={{opacity:0.4}}>🔒 ???</span>
+      <span className="title-badge inactive" style={{opacity:0.4}}>🔒 ???</span>
+    </div>
+    <div style={{height:16}} />
+  </div>
+);
+
+/* ── TRAINING SCREEN ──────────────────────────────────────── */
+const TrainingScreen = () => {
+  const [sets, setSets] = useState(
+    BLOCK.exercises.reduce((acc, ex) => {
+      acc[ex.id] = ex.sets.map(s => ({...s, done:false}));
+      return acc;
+    }, {})
+  );
+  const [open, setOpen] = useState({1:true, 2:false, 3:false});
+  const [seconds, setSeconds] = useState(0);
+  const [running, setRunning] = useState(true);
+  const [xpFlash, setXpFlash] = useState(null);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setSeconds(s => s+1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  const toggleSet = (exId, setIdx) => {
+    setSets(prev => {
+      const ex = [...prev[exId]];
+      const wasDone = ex[setIdx].done;
+      ex[setIdx] = {...ex[setIdx], done: !wasDone};
+      if (!wasDone) setXpFlash('+30 XP');
+      return {...prev, [exId]: ex};
+    });
+    if (!sets[exId][setIdx].done) setTimeout(() => setXpFlash(null), 1200);
+  };
+
+  const totalSets = BLOCK.exercises.reduce((a,ex) => a+ex.sets.length, 0);
+  const doneSets  = Object.values(sets).flat().filter(s=>s.done).length;
+
+  return (
+    <div className="screen-scroll slide-up">
+      {/* Header */}
+      <div style={{marginBottom:14}}>
+        <SysLabel>— ENTRENAMIENTO EN CURSO —</SysLabel>
+        <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:18, color:'#e2e8f0', marginTop:4, letterSpacing:'0.03em'}}>{BLOCK.workoutName}</div>
+      </div>
+
+      {/* Timer + progress */}
+      <div className="sl-card" style={{marginBottom:14, display:'flex', alignItems:'center', gap:16}}>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:32, color:'#60a5fa', letterSpacing:'0.06em', cursor:'pointer'}} onClick={()=>setRunning(r=>!r)}>
+            {fmt(seconds)}
+          </div>
+          <div style={{fontSize:9, color:'rgba(96,165,250,0.5)', letterSpacing:'0.12em', fontFamily:"'Barlow Condensed',sans-serif"}}>
+            {running ? '▶ RUNNING' : '⏸ PAUSED'}
+          </div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
+            <span style={{fontSize:11, color:'rgba(148,163,184,0.6)'}}>Series completadas</span>
+            <span style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:14, color:'#60a5fa'}}>{doneSets}/{totalSets}</span>
+          </div>
+          <div className="prog-track">
+            <div className="prog-fill" style={{width:`${(doneSets/totalSets)*100}%`}} />
+          </div>
+        </div>
+        {/* XP flash */}
+        {xpFlash && (
+          <div style={{position:'absolute', right:24, top:100, color:'#34d399', fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:18, animation:'xpGain 1.1s ease forwards', pointerEvents:'none'}}>
+            {xpFlash}
+          </div>
+        )}
+      </div>
+
+      {/* Exercises */}
+      <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:14}}>
+        {BLOCK.exercises.map(ex => {
+          const exSets = sets[ex.id];
+          const exDone = exSets.filter(s=>s.done).length;
+          const isOpen = open[ex.id];
+          return (
+            <div key={ex.id} className="sl-card" style={{padding:'0'}}>
+              {/* Exercise header */}
+              <button style={{width:'100%', background:'none', border:'none', cursor:'pointer', padding:'12px 16px', display:'flex', alignItems:'center', gap:10}} onClick={()=>setOpen(o=>({...o,[ex.id]:!o[ex.id]}))}>
+                <div style={{width:6, height:6, borderRadius:'50%', background:exDone===exSets.length?'#22c55e':'#3b82f6', boxShadow:`0 0 6px ${exDone===exSets.length?'#22c55e':'#3b82f6'}`, flexShrink:0}} />
+                <span style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:600, fontSize:15, color:'#e2e8f0', flex:1, textAlign:'left', letterSpacing:'0.03em'}}>{ex.name}</span>
+                <span style={{fontSize:11, color:'rgba(96,165,250,0.6)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:600}}>{exDone}/{exSets.length}</span>
+                <span style={{color:'rgba(96,165,250,0.4)', fontSize:13, marginLeft:4, transform:isOpen?'rotate(90deg)':'rotate(0)', transition:'transform 0.2s'}}>›</span>
+              </button>
+              {/* Sets */}
+              {isOpen && (
+                <div style={{padding:'0 16px 12px', display:'flex', flexDirection:'column', gap:8}}>
+                  <div style={{display:'grid', gridTemplateColumns:'24px 1fr 48px 48px', gap:8, alignItems:'center', marginBottom:2}}>
+                    {['','SERIE','KG','REPS'].map((h,i) => (
+                      <span key={i} style={{fontSize:9, color:'rgba(96,165,250,0.4)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:600, letterSpacing:'0.1em', textAlign:i>0?'center':'left'}}>{h}</span>
+                    ))}
+                  </div>
+                  {exSets.map((s,idx) => (
+                    <div key={idx} style={{display:'grid', gridTemplateColumns:'24px 1fr 48px 48px', gap:8, alignItems:'center'}}>
+                      <button className={`set-ck ${s.done?'ck-done':''}`} onClick={()=>toggleSet(ex.id,idx)}>
+                        {s.done ? '✓' : ''}
+                      </button>
+                      <span style={{fontSize:12, color:'rgba(148,163,184,0.7)', textAlign:'center', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:600}}>#{s.n}</span>
+                      <span style={{fontSize:13, color:s.done?'rgba(148,163,184,0.4)':'#e2e8f0', textAlign:'center', fontFamily:"'Rajdhani',sans-serif", fontWeight:600}}>{s.kg}</span>
+                      <span style={{fontSize:13, color:s.done?'rgba(148,163,184,0.4)':'#e2e8f0', textAlign:'center', fontFamily:"'Rajdhani',sans-serif", fontWeight:600}}>×{s.reps}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <button className="glow-btn" style={{background:'rgba(34,197,94,0.1)', borderColor:'rgba(34,197,94,0.3)', color:'#86efac'}}>
+        ✦ COMPLETAR ENTRENAMIENTO
+      </button>
+      <div style={{height:16}} />
+    </div>
+  );
+};
+
+/* ── QUESTS SCREEN ────────────────────────────────────────── */
+const QuestsScreen = () => {
+  const [daily, setDaily] = useState(DAILY_QUESTS.map(q=>({...q})));
+
+  const toggleQuest = id => {
+    setDaily(qs => qs.map(q => q.id===id ? {...q, done:!q.done} : q));
+  };
+
+  return (
+    <div className="screen-scroll slide-up">
+      <div style={{marginBottom:12}}><SysLabel>— QUESTS DIARIAS —</SysLabel></div>
+      <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:20}}>
+        {daily.map(q => (
+          <div key={q.id} className={`quest-card ${q.done?'qdone':''}`} style={{cursor:'pointer'}} onClick={()=>toggleQuest(q.id)}>
+            <div style={{display:'flex', alignItems:'center', gap:10}}>
+              <div style={{width:26, height:26, borderRadius:'50%', background:q.done?'rgba(34,197,94,0.12)':'rgba(59,130,246,0.06)', border:`1.5px solid ${q.done?'rgba(34,197,94,0.45)':'rgba(59,130,246,0.22)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:q.done?'#4ade80':'rgba(96,165,250,0.5)', flexShrink:0, transition:'all 0.2s'}}>
+                {q.done ? '✓' : '○'}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13, color:q.done?'rgba(148,163,184,0.45)':'#e2e8f0', textDecoration:q.done?'line-through':'none', transition:'all 0.2s'}}>{q.title}</div>
+                <div style={{fontSize:10, color:q.done?'rgba(34,197,94,0.5)':'rgba(96,165,250,0.55)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, marginTop:2, letterSpacing:'0.06em'}}>+{q.reward} XP</div>
+              </div>
+              {q.done && <span style={{fontSize:10, color:'#4ade80', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:'0.06em'}}>COMPLETADA</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{marginBottom:12}}><SysLabel>— QUESTS SEMANALES —</SysLabel></div>
+      <div style={{display:'flex', flexDirection:'column', gap:10, marginBottom:20}}>
+        {WEEKLY_QUESTS.map(q => (
+          <div key={q.id} className="quest-card">
+            <div style={{display:'flex', alignItems:'flex-start', gap:10, marginBottom:8}}>
+              <div style={{width:26, height:26, borderRadius:'50%', border:'1.5px solid rgba(168,85,247,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, color:'rgba(168,85,247,0.5)', flexShrink:0}}>◇</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13, color:'#e2e8f0', marginBottom:2}}>{q.title}</div>
+                <div style={{fontSize:10, color:'rgba(168,85,247,0.6)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:'0.06em'}}>+{q.reward} XP</div>
+              </div>
+              <span style={{fontSize:11, color:'rgba(168,85,247,0.6)', fontFamily:"'Rajdhani',sans-serif", fontWeight:700, whiteSpace:'nowrap'}}>{q.prog}/{q.total}</span>
+            </div>
+            <div className="prog-track">
+              <div className="prog-fill" style={{width:`${(q.prog/q.total)*100}%`, background:'linear-gradient(90deg, #7e22ce, #a855f7)'}} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Block missions */}
+      <div style={{marginBottom:12}}><SysLabel>— MISIONES DE BLOQUE —</SysLabel></div>
+      <div className="sl-card sl-card-hover" style={{cursor:'default'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+          <div>
+            <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:15, color:'#e2e8f0'}}>{BLOCK.name}</div>
+            <div style={{fontSize:11, color:'rgba(148,163,184,0.5)', marginTop:2}}>Semana {BLOCK.week} de {BLOCK.totalWeeks}</div>
+          </div>
+          <span style={{fontSize:11, color:'rgba(96,165,250,0.6)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700}}>EN CURSO</span>
+        </div>
+        <div className="prog-track">
+          <div className="prog-fill" style={{width:`${(BLOCK.week/BLOCK.totalWeeks)*100}%`}} />
+        </div>
+      </div>
+      <div style={{height:16}} />
+    </div>
+  );
+};
+
+/* ── GUILD SCREEN ─────────────────────────────────────────── */
+const GuildScreen = ({hunter}) => (
+  <div className="screen-scroll slide-up">
+    {/* Guild header */}
+    <div style={{textAlign:'center', padding:'16px 0 20px', position:'relative'}}>
+      <div style={{position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.08) 0%, transparent 70%)', pointerEvents:'none'}} />
+      <div style={{fontSize:40, marginBottom:8}}>🏴</div>
+      <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:26, color:'#e2e8f0', letterSpacing:'0.06em'}}>{hunter.guild.toUpperCase()}</div>
+      <div style={{fontSize:11, color:'rgba(148,163,184,0.5)', marginTop:4}}>Guild Lv. 7 · {GUILD_MEMBERS.length} hunters</div>
+      <div style={{display:'flex', gap:20, justifyContent:'center', marginTop:16}}>
+        {[['Guild XP','24,800','rgba(168,85,247,0.8)'],['Rango','B','rgba(168,85,247,0.8)'],['Victorias','142','rgba(245,158,11,0.8)']].map(([l,v,c]) => (
+          <div key={l} style={{textAlign:'center'}}>
+            <div style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:20, color:c}}>{v}</div>
+            <div style={{fontSize:9, color:'rgba(148,163,184,0.4)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:600, letterSpacing:'0.08em', textTransform:'uppercase'}}>{l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Members */}
+    <div style={{marginBottom:10}}><SysLabel>— HUNTERS —</SysLabel></div>
+    <div style={{display:'flex', flexDirection:'column', gap:8, marginBottom:20}}>
+      {GUILD_MEMBERS.map((m,i) => (
+        <div key={i} className="sl-card sl-card-hover" style={{display:'flex', alignItems:'center', gap:12, cursor:'default'}}>
+          <div style={{width:36, height:36, borderRadius:8, background:`linear-gradient(135deg, ${RANKS_CFG[m.rank].color}20, ${RANKS_CFG[m.rank].color}08)`, border:`1px solid ${RANKS_CFG[m.rank].color}30`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:RANKS_CFG[m.rank].color, fontFamily:"'Rajdhani',sans-serif", flexShrink:0}}>
+            {m.name[0]}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{display:'flex', alignItems:'center', gap:8}}>
+              <span style={{fontFamily:"'Rajdhani',sans-serif", fontWeight:700, fontSize:14, color:'#e2e8f0'}}>{m.name}</span>
+              {m.name === hunter.name && <span style={{fontSize:9, color:'rgba(96,165,250,0.6)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, letterSpacing:'0.08em', background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.2)', borderRadius:3, padding:'1px 5px'}}>YOU</span>}
+            </div>
+            <div style={{fontSize:10, color:'rgba(148,163,184,0.5)', marginTop:1}}>{m.role} · Lv.{m.level}</div>
+          </div>
+          <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:3}}>
+            <RankBadge rank={m.rank} size="sm" />
+            <div style={{display:'flex', alignItems:'center', gap:3}}>
+              <span style={{fontSize:11, animation:'streakAnim 1.8s ease-in-out infinite', display:'inline-block'}}>🔥</span>
+              <span style={{fontSize:11, color:'#f97316', fontFamily:"'Rajdhani',sans-serif", fontWeight:600}}>{m.streak}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Guild quests */}
+    <div style={{marginBottom:10}}><SysLabel>— QUESTS DE GUILD —</SysLabel></div>
+    <div style={{display:'flex', flexDirection:'column', gap:8}}>
+      {[
+        {title:'Entre todos: 500 series esta semana', prog:347, total:500, reward:2000},
+        {title:'Ningún miembro falla 3 días seguidos', prog:14, total:14, reward:1500},
+      ].map((q,i) => (
+        <div key={i} className="quest-card">
+          <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
+            <span style={{fontSize:12, color:'#e2e8f0', flex:1, paddingRight:8}}>{q.title}</span>
+            <span style={{fontSize:10, color:'rgba(168,85,247,0.7)', fontFamily:"'Barlow Condensed',sans-serif", fontWeight:700, whiteSpace:'nowrap'}}>+{q.reward} XP</span>
+          </div>
+          <div className="prog-track">
+            <div className="prog-fill" style={{width:`${(q.prog/q.total)*100}%`, background:'linear-gradient(90deg, #7e22ce, #a855f7)'}} />
+          </div>
+          <div style={{marginTop:5, fontSize:10, color:'rgba(148,163,184,0.4)'}}>{q.prog} / {q.total}</div>
+        </div>
+      ))}
+    </div>
+    <div style={{height:16}} />
+  </div>
+);
+
+/* ── APP ──────────────────────────────────────────────────── */
+function App() {
+  const { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakSlider } = window;
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [screen, setScreen] = useState('dashboard');
+  const [showLevelUp, setShowLevelUp] = useState(false);
+
+  const rank = tweaks.hunterRank || 'C';
+  const density = tweaks.particleDensity || 40;
+
+  useEffect(() => {
+    const stop = startParticles(density);
+    return stop;
+  }, [density]);
+
+  const hunter = {...HUNTER_BASE, level: HUNTER_BASE.level + (rank !== 'C' ? RANK_ORDER.indexOf(rank) - RANK_ORDER.indexOf('C') : 0)};
+
+  return (
+    <>
+      {showLevelUp && <LevelUpModal newLevel={hunter.level+1} rank={rank} onClose={()=>setShowLevelUp(false)} />}
+
+      <div className="phone">
+        <TopBar hunter={hunter} rank={rank} onTriggerLevelUp={()=>setShowLevelUp(true)} />
+
+        {screen==='dashboard' && <DashboardScreen hunter={hunter} rank={rank} onTab={setScreen} onLevelUp={()=>setShowLevelUp(true)} />}
+        {screen==='status'    && <StatusScreen    hunter={hunter} rank={rank} />}
+        {screen==='training'  && <TrainingScreen />}
+        {screen==='quests'    && <QuestsScreen />}
+        {screen==='guild'     && <GuildScreen hunter={hunter} />}
+
+        <BottomNav active={screen} onTab={setScreen} />
+      </div>
+
+      <TweaksPanel>
+        <TweakSection title="Hunter">
+          <TweakRadio  id="hunterRank"      label="Rango actual"     value={tweaks.hunterRank}      options={['E','D','C','B','A','S']} onChange={v=>setTweak('hunterRank',v)} />
+        </TweakSection>
+        <TweakSection title="Estilo">
+          <TweakRadio  id="glowIntensity"   label="Intensidad glow"  value={tweaks.glowIntensity}   options={['off','low','full']} onChange={v=>setTweak('glowIntensity',v)} />
+        </TweakSection>
+        <TweakSection title="Partículas">
+          <TweakSlider id="particleDensity" label="Densidad"         value={tweaks.particleDensity} min={0} max={80} step={10} onChange={v=>setTweak('particleDensity',v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

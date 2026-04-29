@@ -11,7 +11,13 @@
       "Bash(npx drizzle-kit *)",
       "Bash(npm run *)",
       "Bash(node *)",
-      "Bash(start *)"
+      "Bash(start *)",
+      "Bash(xargs grep *)",
+      "Bash(xargs cat *)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "neon"
+  ]
 }

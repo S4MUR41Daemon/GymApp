@@ -12,6 +12,7 @@ import {
 import { relations } from "drizzle-orm";
 
 export const blockEnum = pgEnum("block", ["mobility", "basics", "main", "cardio"]);
+export const rankEnum = pgEnum("rank", ["E", "D", "C", "B", "A", "S", "S+"]);
 
 // ---------------------------------------------------------------------------
 // Catalog
@@ -149,6 +150,30 @@ export const userExerciseStats = pgTable("user_exercise_stats", {
   reference1rm: numeric("reference_1rm", { precision: 6, scale: 2 }),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => [unique().on(t.userId, t.exerciseId)]);
+
+// ---------------------------------------------------------------------------
+// Solo Leveling — user level & XP events
+// ---------------------------------------------------------------------------
+
+export const userLevels = pgTable("user_levels", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  xp: integer("xp").default(0).notNull(),
+  level: integer("level").default(1).notNull(),
+  rank: rankEnum("rank").default("E").notNull(),
+  streakDays: integer("streak_days").default(0).notNull(),
+  lastWorkoutDate: timestamp("last_workout_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const xpEvents = pgTable("xp_events", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  xpGained: integer("xp_gained").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // Relations

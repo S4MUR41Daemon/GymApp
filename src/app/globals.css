@@ -23,6 +23,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --font-rajdhani: var(--font-rajdhani);
+  --font-barlow: var(--font-barlow);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -127,4 +129,89 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ---- Solo Leveling tokens ---- */
+:root {
+  --sl-bg-base: #06080f;
+  --sl-bg-phone: linear-gradient(175deg, #07101e 0%, #06080f 60%);
+  --sl-accent-blue: #3b82f6;
+  --sl-accent-light: #60a5fa;
+  --sl-accent-dim: #1d4ed8;
+  --sl-accent-pale: #bfdbfe;
+  --sl-cyan: #22d3ee;
+  --sl-text-primary: #e2e8f0;
+  --sl-text-secondary: rgba(148, 163, 184, 0.7);
+  --sl-text-muted: rgba(148, 163, 184, 0.45);
+  --sl-text-accent: #93c5fd;
+  --sl-rank-E: #94a3b8;
+  --sl-rank-D: #22c55e;
+  --sl-rank-C: #3b82f6;
+  --sl-rank-B: #a855f7;
+  --sl-rank-A: #f97316;
+  --sl-rank-S: #f59e0b;
+}
+
+body {
+  background: var(--sl-bg-base);
+}
+
+/* ---- Keyframes ---- */
+@keyframes rankGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 6px var(--rg, rgba(59, 130, 246, 0.5)),
+      inset 0 0 4px var(--ri, rgba(59, 130, 246, 0.2));
+  }
+
+  50% {
+    box-shadow:
+      0 0 18px var(--rg, rgba(59, 130, 246, 0.5)),
+      0 0 32px var(--rg2, rgba(59, 130, 246, 0.15)),
+      inset 0 0 8px var(--ri, rgba(59, 130, 246, 0.2));
+  }
+}
+
+@keyframes streakAnim {
+  0%,
+  100% {
+    transform: scaleY(1) rotate(-3deg);
+  }
+
+  50% {
+    transform: scaleY(1.15) rotate(3deg);
+  }
+}
+
+@keyframes lvlReveal {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes sysPulse {
+  0%,
+  100% {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
+  }
+
+  50% {
+    border-color: rgba(96, 165, 250, 0.7);
+    box-shadow: 0 0 40px rgba(96, 165, 250, 0.45);
+  }
+}
+
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
 }
